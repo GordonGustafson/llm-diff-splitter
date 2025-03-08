@@ -1,0 +1,3 @@
+* TODO skip patches across 2 commits that are just 1 line?
+Example: python-certifi-9e837a5fbd135b95057abb8f14b775a50aee8a01.multipatch 
+same line was updated from 4.0 -> 4.1, then 4.1 to 4.2 by two separate commits, each touching only that line.
