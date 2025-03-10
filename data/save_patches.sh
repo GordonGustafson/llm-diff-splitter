@@ -8,28 +8,30 @@ OUTPUT_PATCHFILE_DIR=patches
 
 mkdir -p $OUTPUT_PATCHFILE_DIR
 
-function is_merge_commit() {
+function has_exactly_one_parent() {
     full_repo_path=$1
     commit_hash=$2
-    parents=$(git -C $full_repo_path show --pretty=%ph --quiet $commit_hash)
-    # It's a merge commit if there's multiple parents (if the list of parents has a space in it).
+    parents=$(git -C $full_repo_path show --pretty=%p --quiet $commit_hash)
+    # If the list of parents has a space in it, return false.
     if echo "$parents" | grep -q " "; then
-        true
-    else
-        false
+        return 1
     fi
+    # If there's something in the list of parents, return true.
+    if echo "$parents" | grep -q "."; then
+        return 0
+    fi
+    return 1
 }
 
-while read git_repo_remote; do
+while read -r git_repo_remote; do
     repo_dir=$(basename --suffix=.git $git_repo_remote)
     full_repo_path=$CLONE_DIR/$repo_dir
     echo "Saving patches for repo '$repo_dir'..."
-    # Skip first two commits in the repo because we need commits to have two parents.
-    for commit in $(git -C $full_repo_path rev-list HEAD | head -n -2); do
-        if is_merge_commit $full_repo_path $commit; then
+    for commit in $(git -C $full_repo_path rev-list HEAD); do
+        if ! has_exactly_one_parent $full_repo_path $commit; then
             continue
         fi
-        if is_merge_commit $full_repo_path $commit^; then
+        if ! has_exactly_one_parent $full_repo_path "$commit^"; then
             continue
         fi
         output_filename="$OUTPUT_PATCHFILE_DIR/$repo_dir-$commit.tar"
