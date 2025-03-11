@@ -11,8 +11,7 @@ generator = pipeline('text-generation', model=str(saved_model_dir))
 set_seed(42)
 git_diff_result = subprocess.run(['git', 'diff'], stdout=subprocess.PIPE)
 git_diff_str = git_diff_result.stdout.decode('utf-8')
-generate_kwargs = {"temperature": 0.5}
-result = generator(git_diff_str, max_length=1024, num_return_sequences=1, generate_kwargs=generate_kwargs)
+result = generator(git_diff_str, max_length=1024, num_return_sequences=1, temperature=0.5)
 
 encoding = tiktoken.encoding_for_model("gpt2")
 git_diff_num_tokens = len(encoding.encode(git_diff_str))
