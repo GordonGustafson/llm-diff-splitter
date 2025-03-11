@@ -24,7 +24,7 @@ class DiffPair:
 
 
 def _read_str_from_tarfile(archive: tarfile.TarFile, filename: str) -> str:
-    with archive.extractfile(filename) as binary, io.TextIOWrapper(binary, encoding='utf-8') as text:
+    with archive.extractfile(filename) as binary, io.TextIOWrapper(binary, encoding='latin-1') as text:
         return text.read()
 
 
