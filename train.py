@@ -4,6 +4,11 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer, Trainer, TrainingArguments, AutoModelForCausalLM
 
+from peft import (
+        get_peft_model, 
+        LoraConfig
+    )
+
 from data.dataset import load_huggingface_dataset
 
 
@@ -22,6 +27,16 @@ def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
     tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(model_name)
+
+    lora_config = LoraConfig(
+        r=8,
+        lora_alpha=8,
+        lora_dropout=0.1,
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+    model = get_peft_model(model, lora_config)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
@@ -34,8 +49,8 @@ def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
         eval_strategy="steps",
         eval_steps=400,
         save_strategy="no",
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         num_train_epochs=1,
         weight_decay=0.01,
         logging_dir="./logs",
