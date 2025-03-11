@@ -2,11 +2,17 @@
 
 set -euo pipefail
 
+pushd "$(dirname "$0")"
+
 REPOS_FILE=github_repos.txt
 CLONE_DIR=repos
 OUTPUT_PATCHFILE_DIR=patches
 
 mkdir -p $OUTPUT_PATCHFILE_DIR
+
+FIRST_PATCH_FILENAME=first-diff.patch
+SECOND_PATCH_FILENAME=second-diff.patch
+COMBINED_PATCH_FILENAME=combined-diff.patch
 
 function has_exactly_one_parent() {
     full_repo_path=$1
@@ -35,9 +41,13 @@ while read -r git_repo_remote; do
             continue
         fi
         output_filename="$OUTPUT_PATCHFILE_DIR/$repo_dir-$commit.tar"
-        git -C $full_repo_path diff $commit^^..$commit^ > first-diff.patch
-        git -C $full_repo_path diff $commit^..$commit > second-diff.patch
-        git -C $full_repo_path diff $commit^^..$commit > combined-diff.patch
-        tar cf $output_filename first-diff.patch second-diff.patch combined-diff.patch
+        git -C $full_repo_path diff $commit^^..$commit^ > $FIRST_PATCH_FILENAME
+        git -C $full_repo_path diff $commit^..$commit > $SECOND_PATCH_FILENAME
+        git -C $full_repo_path diff $commit^^..$commit > $COMBINED_PATCH_FILENAME
+        tar cf $output_filename $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
     done
 done < $REPOS_FILE
+
+rm $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
+
+popd

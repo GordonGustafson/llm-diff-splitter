@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+pushd "$(dirname "$0")"
+
 REPOS_FILE=github_repos.txt
 CLONE_DIR=repos
 
@@ -12,3 +14,4 @@ while read git_repo_remote; do
     git clone $git_repo_remote
     popd
 done < $REPOS_FILE
+popd
