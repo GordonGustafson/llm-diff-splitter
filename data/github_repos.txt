@@ -13,7 +13,6 @@ git@github.com:grpc/grpc.git
 git@github.com:dateutil/dateutil.git
 git@github.com:boto/s3transfer.git
 git@github.com:benjaminp/six.git
-git@github.com:yaml/pyyaml.git
 git@github.com:numpy/numpy.git
 git@github.com:fsspec/s3fs.git
 git@github.com:pyca/cryptography.git
