@@ -1,4 +1,4 @@
-from data.dataset import write_parquet_from_tar_directory
+from dataset import write_parquet_from_tar_directory
 
 from pathlib import Path
 
