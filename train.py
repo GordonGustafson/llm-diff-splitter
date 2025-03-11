@@ -23,7 +23,7 @@ def fine_tune_gpt2(model_name="openai-community/gpt2"):
 
     model = GPT2LMHeadModel.from_pretrained(model_name)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
-    dataset = dataset.train_test_split(test_size=0.1, seed=42)
+    dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     tokenized_datasets = dataset.map(lambda row: tokenize_function(row, tokenizer))
 
