@@ -2,11 +2,14 @@
 
 set -euo pipefail
 
-pushd "$(dirname "$0")"
+script_dir="$(dirname $(realpath "$0"))"
+pushd $script_dir >/dev/null
+
+echo $script_dir
 
 REPOS_FILE=github_repos.txt
 CLONE_DIR=repos
-OUTPUT_PATCHFILE_DIR=patches
+OUTPUT_PATCHFILE_DIR=$script_dir/patches
 
 mkdir -p $OUTPUT_PATCHFILE_DIR
 
@@ -29,10 +32,13 @@ function has_exactly_one_parent() {
     return 1
 }
 
-while read -r git_repo_remote; do
-    repo_dir=$(basename --suffix=.git $git_repo_remote)
-    full_repo_path=$CLONE_DIR/$repo_dir
-    echo "Saving patches for repo '$repo_dir'..."
+function save_commits_for_repo() {
+    full_repo_path=$1
+
+    echo "Saving patches for repo '$full_repo_path'..."
+
+    tempdir=$(mktemp -d)
+    pushd $tempdir >/dev/null
     for commit in $(git -C $full_repo_path rev-list HEAD); do
         if ! has_exactly_one_parent $full_repo_path $commit; then
             continue
@@ -46,8 +52,18 @@ while read -r git_repo_remote; do
         git -C $full_repo_path diff $commit^^..$commit > $COMBINED_PATCH_FILENAME
         tar cf $output_filename $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
     done
+    popd
+    rm -rf $tempdir
+
+    echo "Finished saving patches for repo '$full_repo_path'"
+}
+
+while read -r git_repo_remote; do
+    repo_dir=$(basename --suffix=.git $git_repo_remote)
+    full_repo_path=$script_dir/$CLONE_DIR/$repo_dir
+    save_commits_for_repo $full_repo_path  &
 done < $REPOS_FILE
 
-rm $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
+wait
 
 popd
