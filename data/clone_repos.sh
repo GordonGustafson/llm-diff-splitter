@@ -11,7 +11,10 @@ mkdir -p $CLONE_DIR
 
 while read git_repo_remote; do
     pushd $CLONE_DIR
-    git clone $git_repo_remote
+    git clone $git_repo_remote &
     popd
 done < $REPOS_FILE
+
+wait
+
 popd
