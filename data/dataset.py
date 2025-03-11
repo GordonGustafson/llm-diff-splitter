@@ -1,3 +1,4 @@
+import datasets
 import pandas as pd
 import pyarrow
 import pyarrow.parquet
@@ -36,16 +37,34 @@ def _read_diff_pair_from_tar_path(tar_path: Path) -> DiffPair:
         )
 
 
-def tar_directory_to_dataframe(directory_of_tar_files: Path) -> pd.DataFrame:
+def read_dataframe_from_tar_directory(directory_of_tar_files: Path) -> pd.DataFrame:
     dicts = (asdict(_read_diff_pair_from_tar_path(tar_path))
              for tar_path in directory_of_tar_files.glob("*"))
     return pd.DataFrame(dicts)
 
 
-def tar_directory_to_parquet(directory_of_tar_files: Path, parquet_output_path: Path) -> None:
-    dataframe = tar_directory_to_dataframe(directory_of_tar_files)
+def write_parquet_from_tar_directory(directory_of_tar_files: Path, parquet_output_path: Path) -> None:
+    dataframe = read_dataframe_from_tar_directory(directory_of_tar_files)
     table = pyarrow.Table.from_pandas(df=dataframe)
     pyarrow.parquet.write_table(table, parquet_output_path)
+
+
+def diff_pair_from_dict(dic: dict[str, str]) -> DiffPair:
+    return DiffPair(
+        first_diff=dic["first_diff"],
+        second_diff=dic["second_diff"],
+        combined_diff=dic["combined_diff"],
+    )
+
+
+def get_training_string_from_row(dic: dict[str, str]) -> dict[str, str]:
+    text = f"{dic['combined_diff']} END DIFF {dic['first_diff']} END DIFF {dic['second_diff']} END DIFF"
+    return {"text": text}
+
+
+def load_huggingface_dataset(parquet_path: Path) -> datasets.DatasetDict:
+    dataset = datasets.load_dataset("parquet", data_files=str(parquet_path))
+    return dataset.map(get_training_string_from_row)
 
 
 class DiffPairDataset(Dataset):
