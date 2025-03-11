@@ -1,4 +1,5 @@
 from transformers import pipeline, set_seed
+import tiktoken
 
 import subprocess
 import pathlib
@@ -10,8 +11,13 @@ generator = pipeline('text-generation', model=str(saved_model_dir))
 set_seed(42)
 git_diff_result = subprocess.run(['git', 'diff'], stdout=subprocess.PIPE)
 git_diff_str = git_diff_result.stdout.decode('utf-8')
-print(f"git diff str: {git_diff_str}")
 result = generator(git_diff_str, max_length=1024, num_return_sequences=1)
-print(result[0]["generated_text"])
+
+encoding = tiktoken.encoding_for_model("gpt2")
+git_diff_num_tokens = len(encoding.encode(git_diff_str))
+print(f"git diff str with {git_diff_num_tokens} tokens: {git_diff_str}")
+
+result_num_tokens = [len(encoding.encode(res['generated_text'])) for res in result]
+print(f"generated_text with {result_num_tokens[0]} tokens: {result[0]['generated_text']}")
 
 
