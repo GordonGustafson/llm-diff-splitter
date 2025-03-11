@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, Trainer, TrainingArguments
+from transformers import AutoTokenizer, Trainer, TrainingArguments, AutoModelForCausalLM
 
 from data.dataset import load_huggingface_dataset
 
@@ -17,11 +17,11 @@ def tokenize_function(row_dict, tokenizer):
     return result
 
 
-def fine_tune_gpt2(model_name="openai-community/gpt2-medium"):
-    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
-    model = GPT2LMHeadModel.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
@@ -53,10 +53,10 @@ def fine_tune_gpt2(model_name="openai-community/gpt2-medium"):
     )
 
     trainer.train()
-    trainer.save_model("./fine_tuned_gpt2")
-    tokenizer.save_pretrained("./fine_tuned_gpt2")
+    trainer.save_model("./fine_tuned_llama-3.2-1B")
+    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B")
 
 
 if __name__ == "__main__":
-    fine_tune_gpt2()
+    fine_tune_model()
 
