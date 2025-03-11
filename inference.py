@@ -11,7 +11,7 @@ set_seed(42)
 git_diff_result = subprocess.run(['git', 'diff'], stdout=subprocess.PIPE)
 git_diff_str = git_diff_result.stdout.decode('utf-8')
 print(f"git diff str: {git_diff_str}")
-result = generator(git_diff_str, num_return_sequences=1)
-print(result)
+result = generator(git_diff_str, max_length=1024, num_return_sequences=1)
+print(result[0]["generated_text"])
 
 
