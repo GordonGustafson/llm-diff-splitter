@@ -7,7 +7,7 @@ from datasets import load_dataset
 from data.dataset import load_huggingface_dataset
 
 
-PARQUET_DATASET_PATH = Path("output.parquet")
+PARQUET_DATASET_PATH = Path("data/output.parquet")
 
 
 def tokenize_function(row_dict, tokenizer):
@@ -23,6 +23,7 @@ def fine_tune_gpt2(model_name="openai-community/gpt2"):
 
     model = GPT2LMHeadModel.from_pretrained(model_name)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
+    dataset = dataset.train_test_split(test_size=0.1, seed=42)
 
     tokenized_datasets = dataset.map(lambda row: tokenize_function(row, tokenizer))
 
@@ -30,7 +31,7 @@ def fine_tune_gpt2(model_name="openai-community/gpt2"):
 
     training_args = TrainingArguments(
         output_dir="./results",
-        eval_strategy="no",
+        eval_strategy="steps",
         eval_steps=400,
         save_strategy="epoch",
         per_device_train_batch_size=7,
@@ -48,6 +49,7 @@ def fine_tune_gpt2(model_name="openai-community/gpt2"):
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
+        eval_dataset=tokenized_datasets["test"],
     )
 
     trainer.train()
