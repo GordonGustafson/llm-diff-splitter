@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 directory_of_tar_files = Path("/home/ggustafson/stuff/llm-diff-splitter/data/patches/")
-output_parquet_filename = Path("output.parquet")
+output_parquet_filename = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 # dataset = DiffPairDataset(directory_of_tar_files)
 # print(dataset[37].first_diff)
@@ -20,8 +20,8 @@ output_parquet_filename = Path("output.parquet")
 dataset = load_huggingface_dataset(output_parquet_filename)
 print(dataset)
 
-iterator = dataset["train"].iter(batch_size=1)
-row = next(iterator)
-print(row["text"])
-
+iterator = dataset["train"].select(range(4)).iter(batch_size=1)
+for row in iterator:
+    print("-" * 239)
+    print(row["text"][0])
 
