@@ -12,17 +12,19 @@ from peft import (
 from data.dataset import load_huggingface_dataset
 
 
+MODEL_NAME = "meta-llama/Llama-3.2-1B"
+MAX_TOKEN_LENGTH = 2048
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 
 def tokenize_function(row_dict, tokenizer):
     text = row_dict["text"]
-    result = tokenizer(text, padding="max_length", truncation=True, max_length=2048)
+    result = tokenizer(text, padding="max_length", truncation=True, max_length=MAX_TOKEN_LENGTH)
     result["labels"] = result["input_ids"]
     return result
 
 
-def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
+def fine_tune_model(model_name: str) -> None:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -73,5 +75,5 @@ def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
 
 
 if __name__ == "__main__":
-    fine_tune_model()
+    fine_tune_model(MODEL_NAME)
 
