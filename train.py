@@ -17,7 +17,7 @@ PARQUET_DATASET_PATH = Path("data/output.parquet")
 
 def tokenize_function(row_dict, tokenizer):
     text = row_dict["text"]
-    result = tokenizer(text, padding="max_length", truncation=True, max_length=1024)
+    result = tokenizer(text, padding="max_length", truncation=True, max_length=2048)
     result["labels"] = result["input_ids"]
     return result
 
@@ -49,8 +49,8 @@ def fine_tune_model(model_name="meta-llama/Llama-3.2-1B") -> None:
         eval_strategy="steps",
         eval_steps=400,
         save_strategy="no",
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         num_train_epochs=1,
         weight_decay=0.01,
         logging_dir="./logs",
