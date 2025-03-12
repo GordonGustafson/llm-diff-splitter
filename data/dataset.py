@@ -15,8 +15,9 @@ _FIRST_DIFF_FILENAME_IN_TAR = "first-diff.patch"
 _SECOND_DIFF_FILENAME_IN_TAR = "second-diff.patch"
 _COMBINED_DIFF_FILENAME_IN_TAR = "combined-diff.patch"
 
-END_COMBINED_DIFF_MARKER = "#*#*#"
-END_FIRST_DIFF_MARKER = "*#*#*"
+# 80 hash signs followed by a newline is a single token in Llama 3.
+END_COMBINED_DIFF_MARKER = "#" * 80 + "\n"
+END_FIRST_DIFF_MARKER = END_COMBINED_DIFF_MARKER
 
 @dataclass
 class DiffPair:
@@ -60,7 +61,7 @@ def diff_pair_from_dict(dic: dict[str, str]) -> DiffPair:
 
 
 def get_training_string_from_row(dic: dict[str, str]) -> dict[str, str]:
-    text = f"{dic['combined_diff']}\n{END_COMBINED_DIFF_MARKER}\n{dic['first_diff']}\n{END_FIRST_DIFF_MARKER}\n{dic['second_diff']}"
+    text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
     return {"text": text}
 
 
