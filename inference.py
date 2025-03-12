@@ -40,6 +40,5 @@ generated_texts = tokenizer.batch_decode(generated_tokens.detach().cpu().numpy()
 print(f"input str: {input_str}")
 
 
-
 for generated_text in generated_texts:
-    print(f"generated_text: {generated_text['generated_text'][len(input_str):]}")
+    print(f"generated_text: {generated_text}")
