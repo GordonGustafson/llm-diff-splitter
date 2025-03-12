@@ -1,9 +1,10 @@
 from data.dataset import END_COMBINED_DIFF_MARKER
+from train import MODEL_NAME, MAX_TOKEN_LENGTH
 
+import torch
 from transformers import AutoModelForCausalLM, set_seed, AutoTokenizer
 from peft import PeftModel, PeftConfig
 
-from train import MODEL_NAME, MAX_TOKEN_LENGTH
 
 import subprocess
 import pathlib
@@ -32,8 +33,8 @@ git_diff_result = subprocess.run(['git', 'diff'], stdout=subprocess.PIPE)
 git_diff_str = git_diff_result.stdout.decode('utf-8')
 input_str = f"{git_diff_str} {END_COMBINED_DIFF_MARKER} "
 input_ids = tokenizer(input_str, return_tensors="pt", truncation=True, max_length=MAX_TOKEN_LENGTH).input_ids.cuda()
-# with torch.inference_mode():
-generated_tokens = model.generate(input_ids=input_ids, max_new_tokens=2048,  num_return_sequences=5, do_sample=True, top_p=0.9)
+with torch.inference_mode():
+    generated_tokens = model.generate(input_ids=input_ids, max_new_tokens=2048,  num_return_sequences=5, do_sample=True, top_p=0.9)
 generated_texts = tokenizer.batch_decode(generated_tokens.detach().cpu().numpy(), skip_special_tokens=True)
 
 print(f"input str: {input_str}")
