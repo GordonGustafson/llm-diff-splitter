@@ -12,7 +12,7 @@ from peft import (
 from data.dataset import load_huggingface_dataset
 
 
-PARQUET_DATASET_PATH = Path("data/output.parquet")
+PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 
 def tokenize_function(row_dict, tokenizer):
