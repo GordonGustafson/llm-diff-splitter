@@ -49,7 +49,7 @@ def fine_tune_model(model_name: str) -> None:
     training_args = TrainingArguments(
         output_dir="./results",
         eval_strategy="steps",
-        eval_steps=400,
+        eval_steps=2000,
         save_strategy="no",
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
