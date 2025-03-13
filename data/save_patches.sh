@@ -20,16 +20,7 @@ COMBINED_PATCH_FILENAME=combined-diff.patch
 function has_exactly_one_parent() {
     full_repo_path=$1
     commit_hash=$2
-    parents=$(git -C $full_repo_path show --pretty=%p --quiet $commit_hash)
-    # If the list of parents has a space in it, return false.
-    if echo "$parents" | grep -q " "; then
-        return 1
-    fi
-    # If there's something in the list of parents, return true.
-    if echo "$parents" | grep -q "."; then
-        return 0
-    fi
-    return 1
+    git -C $full_repo_path show --pretty=%p --quiet $commit_hash | grep -q '^..........$'
 }
 
 function save_commits_for_repo() {
