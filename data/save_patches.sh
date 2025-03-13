@@ -47,9 +47,13 @@ function save_commits_for_repo() {
             continue
         fi
         output_filename="$OUTPUT_PATCHFILE_DIR/$repo_dir-$commit.tar"
-        git -C $full_repo_path diff $commit^^..$commit^ > $FIRST_PATCH_FILENAME
-        git -C $full_repo_path diff $commit^..$commit > $SECOND_PATCH_FILENAME
-        git -C $full_repo_path diff $commit^^..$commit > $COMBINED_PATCH_FILENAME
+        git -C $full_repo_path diff $commit^^..$commit^ > $FIRST_PATCH_FILENAME &
+        git_diff_pids=$!
+        git -C $full_repo_path diff $commit^..$commit > $SECOND_PATCH_FILENAME &
+        git_diff_pids="$git_diff_pids $!"
+        git -C $full_repo_path diff $commit^^..$commit > $COMBINED_PATCH_FILENAME &
+        git_diff_pids="$git_diff_pids $!"
+        wait $git_diff_pids
         tar cf $output_filename $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
     done
     popd
