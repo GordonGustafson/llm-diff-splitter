@@ -58,6 +58,11 @@ function save_commits_for_repo() {
     echo "Finished saving patches for repo '$full_repo_path'"
 }
 
+# Taken from https://stackoverflow.com/a/2873039 . My guess is that this would
+# only speed up `git diff` with the current index rather than `git diff` from
+# two previous commits, but I'm giving it a try.
+git config core.preloadindex true
+
 while read -r git_repo_remote; do
     repo_dir=$(basename --suffix=.git $git_repo_remote)
     full_repo_path=$script_dir/$CLONE_DIR/$repo_dir
