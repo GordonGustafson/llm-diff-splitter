@@ -61,7 +61,7 @@ def fine_tune_model(model_name: str) -> None:
     train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
     eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
 
-    optimizer = torch.optim.AdamW(model.params(),
+    optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=math.exp(-4),
                                   betas=(0.9, 0.999),
                                   weight_decay=0)
