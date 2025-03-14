@@ -59,16 +59,16 @@ def diff_pair_from_dict(dic: dict[str, str]) -> DiffPair:
         combined_diff=dic["combined_diff"],
     )
 
+def get_prompt(dic: dict[str, str]) -> dict[str, str]:
+    text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}"
+    return {"text": text}
 
-def get_training_string_from_row(dic: dict[str, str]) -> dict[str, str]:
+def get_prompt_and_completion(dic: dict[str, str]) -> dict[str, str]:
     text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
     return {"text": text}
 
-
 def load_huggingface_dataset(parquet_path: Path) -> datasets.DatasetDict:
-    dataset = datasets.load_dataset("parquet", data_files=str(parquet_path))
-    return dataset.map(get_training_string_from_row)
-
+    return datasets.load_dataset("parquet", data_files=str(parquet_path))
 
 class DiffPairDataset(Dataset):
     def __init__(self, directory_of_tar_files: Path) -> None:

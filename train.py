@@ -9,11 +9,10 @@ from peft import (
         LoraConfig
     )
 
-from data.dataset import load_huggingface_dataset
-
+from data.dataset import load_huggingface_dataset, get_prompt_and_completion
 
 MODEL_NAME = "meta-llama/Llama-3.2-1B"
-MAX_TOKEN_LENGTH = 2048
+MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 
@@ -40,6 +39,7 @@ def fine_tune_model(model_name: str) -> None:
     )
     model = get_peft_model(model, lora_config)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
+    dataset = dataset.map(get_prompt_and_completion)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_function(row, tokenizer))
