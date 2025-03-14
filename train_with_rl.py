@@ -1,10 +1,11 @@
+import math
 import os
 from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader
 
-from transformers import AutoTokenizer, Trainer, TrainingArguments, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from peft import (
     get_peft_model,
@@ -57,10 +58,10 @@ def fine_tune_model(model_name: str) -> None:
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_function(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
-    train_dataloader = torch.DataLoader(tokenized_datasets["train"], batch_size=1)
-    eval_dataloader = torch.DataLoader(tokenized_datasets["test"], batch_size=1)
+    train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
+    eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
 
-    optimizer = torch.optim.AdamW(mode.params(),
+    optimizer = torch.optim.AdamW(model.params(),
                                   lr=math.exp(-4),
                                   betas=(0.9, 0.999),
                                   weight_decay=0)
