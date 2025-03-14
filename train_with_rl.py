@@ -57,7 +57,7 @@ def fine_tune_model(model_name: str) -> None:
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_function(row, tokenizer))
-    tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+    tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask"])
     train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
     eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
 
