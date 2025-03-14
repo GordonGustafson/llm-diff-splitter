@@ -10,9 +10,9 @@ COMMIT_LISTS_DIR=commit_lists
 combined_commit_lists_file=$(mktemp)
 
 for file in $COMMIT_LISTS_DIR/*.txt; do
-    sed "s/^/$(basename --suffix=.txt $file)_/" $file
+    sed "s/^/$(basename --suffix=.txt $file)\//" $file
 done > $combined_commit_lists_file
 
 cat $combined_commit_lists_file | parallel -m bash save_patches.sh
 
-popd 
+popd >/dev/null

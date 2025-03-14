@@ -18,9 +18,9 @@ COMBINED_PATCH_FILENAME=combined-diff.patch
 tempdir=$(mktemp -d)
 pushd $tempdir >/dev/null
 for pair in "$@"; do
-    # $pair is of the form $repo_$commit, so we split them apart.
-    repo="${pair%_*}"
-    commit="${pair#*_}"
+    # $pair is of the form $repo/$commit, so we split them apart.
+    repo="${pair%/*}"
+    commit="${pair#*/}"
 
     full_repo_path=$script_dir/$CLONE_DIR/$repo
     output_filename="$OUTPUT_PATCHFILE_DIR/$repo-$commit.tar"
@@ -30,7 +30,7 @@ for pair in "$@"; do
     wait
     tar cf $output_filename $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
 done
-popd
+popd >/dev/null
 rm -rf $tempdir
 
-popd
+popd >/dev/null
