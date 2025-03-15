@@ -35,7 +35,7 @@ def compute_loss(transition_scores, generated_tokens, tokenizer) -> torch.Tensor
     reward = diff_metrics_to_reward(diff_metrics)
     print(f"generated_text: {generated_text}")
     print(f"diff metrics: {diff_metrics}")
-    print(f"diff metrics: {diff_metrics}")
+    print(f"rewards: {reward}")
 
     train_loss_items = - selected_log_probabilities * reward
     total_train_loss = train_loss_items.sum()
