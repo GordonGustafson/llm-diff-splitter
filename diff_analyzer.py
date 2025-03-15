@@ -21,4 +21,4 @@ def diff_metrics_to_reward(metrics: DiffMetrics) -> float:
     if metrics.num_diff_separators == 1:
         return 1.0
     else:
-        return 0.0
+        return -1.0
