@@ -32,7 +32,7 @@ def compute_loss(outputs, tokenizer) -> torch.Tensor:
     generated_text = tokenizer.batch_decode(tokens)
     print(f"generated_text: {generated_text}")
     log_probabilities = torch.nn.functional.log_softmax(logits, dim=2)
-    selected_log_probabilities = torch.gather(log_probabilities, dim=2, index=tokens)
+    selected_log_probabilities = torch.gather(log_probabilities, dim=2, index=tokens.unsqueeze(2))
 
     diff_metrics = get_diff_metrics(generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
