@@ -25,11 +25,14 @@ def tokenize_function(row_dict, tokenizer):
     result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH)
     return result
 
-def compute_loss(model_outputs) -> torch.Tensor:
-    # This is probably the wrong way to extract the logits and generated text.
-    logits = model_outputs["logits"]
-    generated_text = model_outputs["generated_text"]
-    log_probabilities = torch.nn.functional.log_softmax(logits)
+def compute_loss(outputs, transition_scores, tokenizer) -> torch.Tensor:
+    tokens = outputs.sequences
+    scores = outputs.scores
+    print(f"tokens: {tokens}")
+    print(f"scores: {scores}")
+    print(f"transition_scores: {transition_scores}")
+    log_probabilities = torch.nn.functional.log_softmax(transition_scores)
+    generated_text = tokenizer.batch_decode(tokens)
     diff_metrics = get_diff_metrics(generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
 
@@ -71,8 +74,12 @@ def fine_tune_model(model_name: str) -> None:
 
     for batch in train_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
-        outputs = model.generate(batch["input_ids"])
-        loss = compute_loss(outputs)
+        outputs = model.generate(batch["input_ids"], return_dict_in_generate=True, output_scores=True)
+        transition_scores = model.compute_transition_scores(
+            outputs.sequences, outputs.scores, normalize_logits=True
+        )
+
+        loss = compute_loss(outputs, transition_scores, tokenizer)
 
         loss.backward()
         optimizer.step()
