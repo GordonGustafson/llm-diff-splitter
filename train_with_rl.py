@@ -77,6 +77,7 @@ def fine_tune_model(model_name: str) -> None:
     for batch in train_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
         outputs = model.generate(batch["input_ids"],
+                                 attention_mask=batch["attention_mask"],
                                  return_dict_in_generate=True,
                                  output_scores=True,
                                  max_length=MAX_TOKEN_LENGTH)
