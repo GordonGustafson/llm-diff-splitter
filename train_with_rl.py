@@ -29,6 +29,8 @@ def compute_loss(outputs, tokenizer) -> torch.Tensor:
     tokens = outputs.sequences  # shape (batch_size, sequence_length)
     logits_tuple = outputs.logits
     logits = torch.stack(logits_tuple, dim=1) # shape: (batch_size, sequence_length, vocab_size)
+    print(f"tokens.shape: {tokens.shape}")
+    print(f"logits.shape: {logits.shape}")
     generated_text = tokenizer.batch_decode(tokens)
     print(f"generated_text: {generated_text}")
     log_probabilities = torch.nn.functional.log_softmax(logits, dim=2)
