@@ -35,7 +35,7 @@ input_str = f"{git_diff_str} {END_COMBINED_DIFF_MARKER} "
 tokenizer_output = tokenizer(input_str, return_tensors="pt", truncation=True, max_length=MAX_TOKEN_LENGTH)
 with torch.inference_mode():
     generated_tokens = model.generate(input_ids=tokenizer_output.input_ids.cuda(),
-                                      attention_mask=tokenizer_output.attention_mask,
+                                      attention_mask=tokenizer_output.attention_mask.cuda(),
                                       max_new_tokens=2048,
                                       num_return_sequences=5,
                                       do_sample=True,
