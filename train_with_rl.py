@@ -25,10 +25,10 @@ def tokenize_function(row_dict, tokenizer):
     result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH)
     return result
 
-def compute_loss(transition_scores, tokens, tokenizer) -> torch.Tensor:
+def compute_loss(transition_scores, generated_tokens, tokenizer) -> torch.Tensor:
     print(f"transition_scores.shape: {transition_scores.shape}")
-    print(f"tokens.shape: {tokens.shape}")
-    generated_text = tokenizer.batch_decode(tokens)
+    print(f"generated_tokens.shape: {generated_tokens.shape}")
+    generated_text = tokenizer.batch_decode(generated_tokens)
     selected_log_probabilities = transition_scores
 
     diff_metrics = get_diff_metrics(generated_text)
@@ -77,11 +77,15 @@ def fine_tune_model(model_name: str) -> None:
                                  return_dict_in_generate=True,
                                  output_scores=True,
                                  max_length=MAX_TOKEN_LENGTH)
+
+        input_length = batch["input_ids"].shape[1]
+        generated_tokens = outputs.sequences[:, input_length:]
+
         transition_scores = model.compute_transition_scores(
             outputs.sequences, outputs.scores, normalize_logits=True
         )
 
-        loss = compute_loss(transition_scores, outputs.sequences, tokenizer)
+        loss = compute_loss(transition_scores, generated_tokens, tokenizer)
 
         loss.backward()
         optimizer.step()
