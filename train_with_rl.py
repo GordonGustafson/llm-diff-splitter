@@ -15,7 +15,7 @@ from peft import (
 from data.dataset import load_huggingface_dataset, get_prompt
 from diff_analyzer import get_diff_metrics, diff_metrics_to_reward
 
-MODEL_NAME = "meta-llama/Llama-3.2-1B"
+MODEL_NAME = "fine_tuned_llama-3.2-1B"
 MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
@@ -33,6 +33,9 @@ def compute_loss(transition_scores, generated_tokens, tokenizer) -> torch.Tensor
 
     diff_metrics = get_diff_metrics(generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
+    print(f"generated_text: {generated_text}")
+    print(f"diff metrics: {diff_metrics}")
+    print(f"diff metrics: {diff_metrics}")
 
     train_loss_items = - selected_log_probabilities * reward
     total_train_loss = train_loss_items.sum()
@@ -91,8 +94,8 @@ def fine_tune_model(model_name: str) -> None:
         optimizer.step()
         optimizer.zero_grad()
 
-    model.save_pretrained("./fine_tuned_llama-3.2-1B")
-    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B")
+    model.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
+    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
 
 if __name__ == "__main__":
     fine_tune_model(MODEL_NAME)
