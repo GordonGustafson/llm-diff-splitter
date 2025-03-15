@@ -31,8 +31,9 @@ def compute_loss(outputs, tokenizer) -> torch.Tensor:
     print(outputs)
     print(f"tokens: {tokens}")
     print(f"logits: {logits}")
-    log_probabilities = torch.nn.functional.log_softmax(transition_scores)
     generated_text = tokenizer.batch_decode(tokens)
+    print(f"generated_text: {generated_text}")
+    log_probabilities = torch.nn.functional.log_softmax(logits)
     diff_metrics = get_diff_metrics(generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
 
