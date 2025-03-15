@@ -27,9 +27,10 @@ def tokenize_function(row_dict, tokenizer):
 
 def compute_loss(outputs, transition_scores, tokenizer) -> torch.Tensor:
     tokens = outputs.sequences
-    scores = outputs.scores
+    logits = outputs.logits
+    print(outputs)
     print(f"tokens: {tokens}")
-    print(f"scores: {scores}")
+    print(f"logits: {logits}")
     print(f"transition_scores: {transition_scores}")
     log_probabilities = torch.nn.functional.log_softmax(transition_scores)
     generated_text = tokenizer.batch_decode(tokens)
@@ -74,7 +75,10 @@ def fine_tune_model(model_name: str) -> None:
 
     for batch in train_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
-        outputs = model.generate(batch["input_ids"], return_dict_in_generate=True, output_scores=True)
+        outputs = model.generate(batch["input_ids"],
+                                 return_dict_in_generate=True,
+                                 output_logits=True,
+                                 max_length=MAX_TOKEN_LENGTH)
         transition_scores = model.compute_transition_scores(
             outputs.sequences, outputs.scores, normalize_logits=True
         )
