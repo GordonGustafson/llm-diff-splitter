@@ -36,6 +36,7 @@ def compute_loss(transition_scores, tokens, tokenizer) -> torch.Tensor:
 
     train_loss_items = - selected_log_probabilities * reward
     total_train_loss = train_loss_items.sum()
+    total_train_loss.requires_grad = True
     return total_train_loss
 
 def fine_tune_model(model_name: str) -> None:
