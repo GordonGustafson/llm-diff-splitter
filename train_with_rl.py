@@ -26,18 +26,18 @@ def tokenize_function(row_dict, tokenizer):
     return result
 
 def compute_loss(outputs, tokenizer) -> torch.Tensor:
-    tokens = outputs.sequences
-    logits = outputs.logits
-    print(outputs)
-    print(f"tokens: {tokens}")
-    print(f"logits: {logits}")
+    tokens = outputs.sequences  # shape (batch_size, sequence_length)
+    logits_tuple = outputs.logits
+    logits = torch.stack(logits_tuple, dim=1) # shape: (batch_size, sequence_length, vocab_size)
     generated_text = tokenizer.batch_decode(tokens)
     print(f"generated_text: {generated_text}")
-    log_probabilities = torch.nn.functional.log_softmax(logits)
+    log_probabilities = torch.nn.functional.log_softmax(logits, dim=2)
+    selected_log_probabilities = log_probabilities[tokens]
+
     diff_metrics = get_diff_metrics(generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
 
-    train_loss_items = - log_probabilities * reward
+    train_loss_items = - selected_log_probabilities * reward
     total_train_loss = train_loss_items.sum()
     return total_train_loss
 
