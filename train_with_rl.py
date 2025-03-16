@@ -12,6 +12,7 @@ from peft import PeftModel
 from data.dataset import load_huggingface_dataset, get_prompt, get_completion
 from diff_analyzer import get_diff_metrics, diff_metrics_to_reward
 
+BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
 MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
@@ -45,7 +46,7 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens, ground_trut
     return total_train_loss
 
 def fine_tune_model(model_name: str) -> None:
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
     tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(model_name)
