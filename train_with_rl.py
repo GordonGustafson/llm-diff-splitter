@@ -80,7 +80,9 @@ def fine_tune_model(model_name: str) -> None:
                                  attention_mask=batch["attention_mask"],
                                  return_dict_in_generate=True,
                                  output_scores=True,
-                                 max_length=MAX_TOKEN_LENGTH)
+                                 max_length=MAX_TOKEN_LENGTH,
+                                 do_sample=True,
+                                 top_p=0.9)
 
         input_length = batch["input_ids"].shape[1]
         generated_tokens = outputs.sequences[:, input_length:]
