@@ -12,7 +12,7 @@ from peft import PeftModel
 from data.dataset import load_huggingface_dataset, get_prompt
 from diff_analyzer import get_diff_metrics, diff_metrics_to_reward
 
-MODEL_NAME = "fine_tuned_llama-3.2-1B"
+MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
 MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
