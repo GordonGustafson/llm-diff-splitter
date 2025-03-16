@@ -10,7 +10,7 @@ import subprocess
 import pathlib
 
 directory_of_script = pathlib.Path(__file__).parent.resolve()
-saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
+# saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 #####################################
 
@@ -19,7 +19,7 @@ model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
 
 # Load the Lora model
-model = PeftModel.from_pretrained(model, str(saved_model_dir))
+model = PeftModel.from_pretrained(model, str(MODEL_NAME))
 model = model.cuda()
 model.eval()
 
