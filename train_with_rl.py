@@ -26,8 +26,8 @@ def tokenize_function(row_dict, tokenizer):
     return result
 
 def compute_loss(transition_scores, prompt_tokens, generated_tokens, tokenizer) -> torch.Tensor:
-    prompt_text = tokenizer.batch_decode(prompt_tokens)
-    generated_text = tokenizer.batch_decode(generated_tokens)
+    prompt_text = tokenizer.batch_decode(prompt_tokens).replace('\\n', '\n')
+    generated_text = tokenizer.batch_decode(generated_tokens).replace('\\n', '\n')
     selected_log_probabilities = transition_scores
 
     diff_metrics = get_diff_metrics(generated_text)
