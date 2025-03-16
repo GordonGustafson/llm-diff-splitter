@@ -61,11 +61,15 @@ def diff_pair_from_dict(dic: dict[str, str]) -> DiffPair:
 
 def get_prompt(dic: dict[str, str]) -> dict[str, str]:
     text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}"
-    return {"text": text}
+    return {"prompt": text}
+
+def get_completion(dic: dict[str, str]) -> dict[str, str]:
+    text = f"{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
+    return {"completion": text}
 
 def get_prompt_and_completion(dic: dict[str, str]) -> dict[str, str]:
     text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
-    return {"text": text}
+    return {"prompt_and_completion": text}
 
 def load_huggingface_dataset(parquet_path: Path) -> datasets.DatasetDict:
     return datasets.load_dataset("parquet", data_files=str(parquet_path))
