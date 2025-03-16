@@ -70,7 +70,8 @@ def fine_tune_model(model_name: str) -> None:
     model.to(device)
 
     for batch in eval_dataloader:
-        batch = {k: v.to(device) for k, v in batch.items()}
+        batch["input_ids"] = batch["input_ids"].to(device)
+        batch["attention_mask"] = batch["attention_mask"].to(device)
         outputs = model.generate(batch["input_ids"],
                                  attention_mask=batch["attention_mask"],
                                  return_dict_in_generate=True,
