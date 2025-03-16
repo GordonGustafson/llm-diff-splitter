@@ -63,7 +63,7 @@ def fine_tune_model(model_name: str) -> None:
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
-    for batch in train_dataloader:
+    for batch in eval_dataloader:
         batch = {k: v.to(device) for k, v in batch.items()}
         outputs = model.generate(batch["input_ids"],
                                  attention_mask=batch["attention_mask"],
