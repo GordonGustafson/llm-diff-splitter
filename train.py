@@ -16,8 +16,8 @@ MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 
-def tokenize_function(row_dict, tokenizer):
-    text = row_dict["text"]
+def tokenize_prompt_and_completion(row_dict, tokenizer):
+    text = row_dict["prompt_and_completion"]
     result = tokenizer(text, padding="max_length", truncation=True, max_length=MAX_TOKEN_LENGTH)
     result["labels"] = result["input_ids"]
     return result
@@ -42,7 +42,7 @@ def fine_tune_model(model_name: str) -> None:
     dataset = dataset.map(get_prompt_and_completion)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
-    tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_function(row, tokenizer))
+    tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt_and_completion(row, tokenizer))
 
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
