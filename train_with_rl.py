@@ -7,10 +7,7 @@ from torch.utils.data import DataLoader
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from peft import (
-    get_peft_model,
-    LoraConfig
-)
+from peft import PeftModel
 
 from data.dataset import load_huggingface_dataset, get_prompt
 from diff_analyzer import get_diff_metrics, diff_metrics_to_reward
@@ -47,16 +44,8 @@ def fine_tune_model(model_name: str) -> None:
     tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = PeftModel.from_pretrained(model, model_name)
 
-    lora_config = LoraConfig(
-        r=16,
-        lora_alpha=8,
-        lora_dropout=0.1,
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
-        bias="none",
-        task_type="CAUSAL_LM",
-    )
-    model = get_peft_model(model, lora_config)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
     dataset = dataset.map(get_prompt)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)

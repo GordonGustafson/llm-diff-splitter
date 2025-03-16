@@ -14,9 +14,6 @@ saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 #####################################
 
-# Load peft config for pre-trained checkpoint etc.
-config = PeftConfig.from_pretrained(str(saved_model_dir))
-
 # load base LLM model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
