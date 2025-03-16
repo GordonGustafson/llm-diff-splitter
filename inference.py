@@ -1,5 +1,5 @@
 from data.dataset import END_COMBINED_DIFF_MARKER
-from train import MODEL_NAME, MAX_TOKEN_LENGTH
+from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH
 
 import torch
 from transformers import AutoModelForCausalLM, set_seed, AutoTokenizer
@@ -16,7 +16,7 @@ saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 # load base LLM model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
 
 # Load the Lora model
 model = PeftModel.from_pretrained(model, str(saved_model_dir))
