@@ -29,7 +29,7 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens, ground_trut
     ground_truth_completion_text = ground_truth_completion[0]
     selected_log_probabilities = transition_scores
 
-    diff_metrics = get_diff_metrics(generated_text)
+    diff_metrics = get_diff_metrics(combined_diff=prompt_text, generated_diff=generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
     print(f"prompt text:\n{prompt_text}")
     print("-" * 239)
