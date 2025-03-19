@@ -48,4 +48,4 @@ for generated_text in generated_texts:
     print(generated_text[len(input_str):])
 
 for generated_text in generated_texts:
-    print(parse_model_output(generated_text))
+    print(parse_model_output(generated_text[len(input_str):]))
