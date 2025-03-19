@@ -1,4 +1,5 @@
 from data.dataset import get_prompt
+from diff_analyzer import parse_model_output
 from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH
 
 import torch
@@ -40,9 +41,11 @@ with torch.inference_mode():
 generated_texts = tokenizer.batch_decode(generated_tokens.detach().cpu().numpy(), skip_special_tokens=True)
 
 print(f"input str: {input_str}")
-
 # Adjust this to whatever's aesthetically pleasing.
 TERMINAL_WIDTH = 239
 for generated_text in generated_texts:
     print("-" * TERMINAL_WIDTH)
     print(generated_text[len(input_str):])
+
+for generated_text in generated_texts:
+    print(parse_model_output(generated_text))
