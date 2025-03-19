@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 from data.dataset import load_huggingface_dataset, get_separate_prompt_and_completion
-from diff_analyzer import get_diff_metrics, diff_metrics_to_reward
+from diff_analyzer import get_diff_metrics, diff_metrics_to_reward, parse_model_output
 
 BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
@@ -31,12 +31,17 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens, ground_trut
 
     diff_metrics = get_diff_metrics(combined_diff=prompt_text, generated_diff=generated_text)
     reward = diff_metrics_to_reward(diff_metrics)
+    model_output = parse_model_output(generated_text)
     print(f"prompt text:\n{prompt_text}")
     print("-" * 239)
     print(f"generated_text:\n{generated_text}")
     print("-" * 239)
     print(f"ground_truth_completion_text:\n{ground_truth_completion_text}")
     print("-" * 239)
+    try:
+        print(model_output)
+    except Exception as e:
+        print(e)
     print(f"diff metrics: {diff_metrics}")
     print(f"rewards: {reward}")
 
