@@ -93,6 +93,8 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
     return file_diff, num_lines_consumed
 
 def parse_multiple_file_diffs(text: str) -> list[FileDiff]:
+    if text.strip() == "":
+        return []
     lines = text.split("\n")
     index_of_next_line_to_parse = 0
     result = []
@@ -103,8 +105,6 @@ def parse_multiple_file_diffs(text: str) -> list[FileDiff]:
     return result
 
 def parse_model_output(output: str) -> ModelOutput:
-    if output.strip() == "":
-        return ModelOutput([], [])
     output_split = output.split(DIFF_SEPARATOR)
     return ModelOutput(first_commit_diffs=parse_multiple_file_diffs(output_split[0]),
                        second_commit_diffs=parse_multiple_file_diffs(output_split[1]))
