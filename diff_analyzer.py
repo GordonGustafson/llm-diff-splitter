@@ -103,6 +103,8 @@ def parse_multiple_file_diffs(text: str) -> list[FileDiff]:
     return result
 
 def parse_model_output(output: str) -> ModelOutput:
+    if output.strip() == "":
+        return ModelOutput([], [])
     output_split = output.split(DIFF_SEPARATOR)
     return ModelOutput(first_commit_diffs=parse_multiple_file_diffs(output_split[0]),
                        second_commit_diffs=parse_multiple_file_diffs(output_split[1]))
