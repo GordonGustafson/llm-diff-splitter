@@ -1,4 +1,4 @@
-from data.dataset import END_COMBINED_DIFF_MARKER
+from data.dataset import get_prompt
 from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH
 
 import torch
@@ -28,7 +28,7 @@ model.eval()
 set_seed(42)
 git_diff_result = subprocess.run(['git', 'diff'], stdout=subprocess.PIPE)
 git_diff_str = git_diff_result.stdout.decode('utf-8')
-input_str = f"{git_diff_str} {END_COMBINED_DIFF_MARKER} "
+input_str = get_prompt({"combined_diff": git_diff_str})["prompt"]
 tokenizer_output = tokenizer(input_str, return_tensors="pt", truncation=True, max_length=MAX_TOKEN_LENGTH)
 with torch.inference_mode():
     generated_tokens = model.generate(input_ids=tokenizer_output.input_ids.cuda(),

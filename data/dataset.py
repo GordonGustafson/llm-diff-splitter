@@ -59,6 +59,10 @@ def diff_pair_from_dict(dic: dict[str, str]) -> DiffPair:
         combined_diff=dic["combined_diff"],
     )
 
+def get_prompt(dic: dict[str, str]) -> dict[str, str]:
+    prompt = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}"
+    return {"prompt": prompt}
+
 def get_separate_prompt_and_completion(dic: dict[str, str]) -> dict[str, str]:
     prompt = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}"
     completion = f"{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
