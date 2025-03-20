@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 from diff_analyzer import parse_file_diff_from_lines, FileDiff, Hunk, parse_multiple_file_diffs, DIFF_SEPARATOR, \
-    parse_model_output, ModelOutput
+    parse_diff_pair, ParsedDiffPair, IOUStats, iou_stats_between_files, iou_stats_between_commits
 
 _TWO_FILES_DIFF_STR = """diff --git a/file1.txt b/file1.txt
 index 88de97e..7ca04a1 100644
@@ -116,10 +116,30 @@ index 0000000..f2e997b
 
     def test_parse_model_output(self):
         model_output_str = DIFF_SEPARATOR.join([_TWO_FILES_DIFF_STR, _TWO_FILES_DIFF_STR])
-        result = parse_model_output(model_output_str)
-        expected_result = ModelOutput(first_commit_diffs=_TWO_FILES_DIFF_RESULT,
-                                      second_commit_diffs=_TWO_FILES_DIFF_RESULT)
+        result = parse_diff_pair(model_output_str)
+        expected_result = ParsedDiffPair(first_commit_diffs=_TWO_FILES_DIFF_RESULT,
+                                         second_commit_diffs=_TWO_FILES_DIFF_RESULT)
         assert result == expected_result
+
+    def test_iou_stats_between_files(self):
+        iou_stats = iou_stats_between_files({1: "a", 2: "b"}, {2: "b", 3: "c"})
+        assert iou_stats == IOUStats(num_only_in_a=1, num_only_in_b=1, num_in_intersection=1)
+        iou_stats = iou_stats_between_files({1: "a", 2: "b"}, {})
+        assert iou_stats == IOUStats(num_only_in_a=2, num_only_in_b=0, num_in_intersection=0)
+        iou_stats = iou_stats_between_files({}, {2: "b", 3: "c"})
+        assert iou_stats == IOUStats(num_only_in_a=0, num_only_in_b=2, num_in_intersection=0)
+        iou_stats = iou_stats_between_files({2: "b", 3: "c"}, {2: "b", 3: "c"})
+        assert iou_stats == IOUStats(num_only_in_a=0, num_only_in_b=0, num_in_intersection=2)
+
+    def test_iou_stats_between_commits(self):
+        commit_a = {"file1": {1: "a", 2: "b"}, "file2": {1: "a", 2: "b"}}
+        commit_b = {"file2": {2: "b", 3: "c"}, "file3": {2: "b", 3: "c", 4: "d"}}
+        iou_stats = iou_stats_between_commits(commit_a, commit_b)
+        assert iou_stats == IOUStats(num_only_in_a=3, num_only_in_b=4, num_in_intersection=1)
+
+    def test_iou(self):
+        assert IOUStats(num_only_in_a=3, num_only_in_b=4, num_in_intersection=1).iou() == 0.125
+
 
 if __name__ == '__main__':
     unittest.main()

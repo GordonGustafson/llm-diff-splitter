@@ -1,5 +1,5 @@
 from data.dataset import get_prompt
-from diff_analyzer import parse_model_output
+from diff_analyzer import parse_diff_pair
 from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH
 
 import torch
@@ -48,4 +48,4 @@ for generated_text in generated_texts:
     print(generated_text[len(input_str):])
 
 for generated_text in generated_texts:
-    print(parse_model_output(generated_text[len(input_str):]))
+    print(parse_diff_pair(generated_text[len(input_str):]))
