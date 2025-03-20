@@ -66,6 +66,7 @@ def run_on_eval_set():
                 parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
             except ParseError as e:
                 print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
+                raise e
 
             print(f"input str: {prompt_text}")
             # Adjust this to whatever's aesthetically pleasing.
