@@ -68,12 +68,12 @@ def run_on_eval_set():
             print("-" * TERMINAL_WIDTH)
             print(text_produced_by_model)
 
-                try:
-                    print(parse_model_output(text_produced_by_model))
-                    num_parseable_outputs += 1
-                except Exception as e:
-                    print(e)
-                    num_unparseable_outputs += 1
+            try:
+                print(parse_model_output(text_produced_by_model))
+                num_parseable_outputs += 1
+            except Exception as e:
+                print(e)
+                num_unparseable_outputs += 1
             print("-" * TERMINAL_WIDTH)
 
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(eval_dataset)} total outputs")
