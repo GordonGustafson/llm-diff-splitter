@@ -37,7 +37,7 @@ _TWO_FILES_DIFF_RESULT = [FileDiff(left_filename="a/file1.txt",
                                                 lines=["+I am file2"])])]
 
 class TestDiffAnalyzer(unittest.TestCase):
-    def test_parse_file_diff(self):
+    def test_parse_file_diff_from_lines(self):
         diff_str = """diff --git a/inference.py b/inference.py
 index 88de97e..7ca04a1 100644
 --- a/inference.py
@@ -88,6 +88,26 @@ index 88de97e..7ca04a1 100644
  model = PeftModel.from_pretrained(model, str(saved_model_dir))
 """.split("\n"))])
         assert result == (expected_result, len(split_diff_str))
+        
+    def test_parse_file_diff_from_lines_5_lines_header(self):
+        diff_str = """diff --git a/eval.py b/eval.py
+new file mode 100644
+index 0000000..f2e997b
+--- /dev/null
++++ b/eval.py
+@@ -1,1 +1,1 @@
++dummy change"""
+        split_diff_str = diff_str.split("\n")
+        result = parse_file_diff_from_lines(split_diff_str)
+        expected_result = FileDiff(left_filename="/dev/null",
+                                   right_filename="b/eval.py",
+                                   hunks=[
+                                       Hunk(left_start_line_number=1,
+                                            left_num_lines=1,
+                                            right_start_line_number=1,
+                                            right_num_lines=1,
+                                            lines=["+dummy change"])])
+        assert result == (expected_result, 7)
 
     def test_parse_multiple_file_diffs(self):
         result = parse_multiple_file_diffs(_TWO_FILES_DIFF_STR)

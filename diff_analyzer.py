@@ -55,25 +55,37 @@ def _get_empty_hunk_from_start_line(start_line) -> Hunk:
                 lines=[])
 
 def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
-    if not lines[0].startswith("diff "):
-        raise ParseError("Missing 'diff ...' on first line")
-    if not lines[1].startswith("index "):
-        raise ParseError("Missing 'index ...' on second line")
+    # the diff "header" can be 4 lines without a "new file mode" line, or 5 lines with a
+    # "new file mode" line.
+    next_line_to_consume_index = 0
 
-    if lines[2].startswith("--- "):
-        left_filename = lines[2].removeprefix("--- ")
+    if not lines[next_line_to_consume_index].startswith("diff "):
+        raise ParseError("Missing 'diff ...' on first line")
+    next_line_to_consume_index += 1
+
+    if lines[next_line_to_consume_index].startswith("new file mode"):
+        next_line_to_consume_index += 1
+
+    if not lines[next_line_to_consume_index].startswith("index "):
+        raise ParseError("Missing 'index ...' on second line")
+    next_line_to_consume_index += 1
+
+    if lines[next_line_to_consume_index].startswith("--- "):
+        left_filename = lines[next_line_to_consume_index].removeprefix("--- ")
     else:
         raise ParseError("Missing '--- ...' on third line")
+    next_line_to_consume_index += 1
 
-    if lines[3].startswith("+++ "):
-        right_filename = lines[3].removeprefix("+++ ")
+    if lines[next_line_to_consume_index].startswith("+++ "):
+        right_filename = lines[next_line_to_consume_index].removeprefix("+++ ")
     else:
         raise ParseError("Missing '+++ ...' on fourth line")
+    next_line_to_consume_index += 1
 
     hunks = []
     current_hunk = None
     index_of_last_line_consumed = 4
-    for index_of_last_line_consumed, line in itertools.islice(enumerate(lines), 4, None):
+    for index_of_last_line_consumed, line in itertools.islice(enumerate(lines), next_line_to_consume_index, None):
         if line.startswith(("diff ", "index ")):
             index_of_last_line_consumed -= 1
             break
