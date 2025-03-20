@@ -37,7 +37,7 @@ def run_on_eval_set():
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
-    eval_dataset = tokenized_datasets["test"].select(range(5))
+    eval_dataset = tokenized_datasets["test"]
     eval_dataloader = DataLoader(eval_dataset, batch_size=1)
 
     num_parseable_outputs = 0
