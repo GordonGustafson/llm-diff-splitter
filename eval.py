@@ -72,7 +72,10 @@ def run_on_eval_set():
             # Adjust this to whatever's aesthetically pleasing.
             TERMINAL_WIDTH = 239
             print("-" * TERMINAL_WIDTH)
-            print(text_produced_by_model)
+            print(f"model produced: {text_produced_by_model}")
+            print("-" * TERMINAL_WIDTH)
+            print(f"ground trush: {ground_truth_completion_text}")
+            print("-" * TERMINAL_WIDTH)
 
             try:
                 parsed_diff_pair = parse_diff_pair(text_produced_by_model)
@@ -85,7 +88,6 @@ def run_on_eval_set():
                                                           ground_truth=parsed_ground_truth_diff_pair)
                 total_max_mean_iou += max_mean_iou
                 print(f"max_mean_iou: {max_mean_iou}")
-            print("-" * TERMINAL_WIDTH)
 
     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(eval_dataset)} total outputs")
