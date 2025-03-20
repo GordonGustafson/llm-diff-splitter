@@ -33,8 +33,8 @@ def run_on_eval_set():
 
     set_seed(42)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
-    dataset = dataset.map(get_separate_prompt_and_completion)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
+    dataset = dataset.map(get_separate_prompt_and_completion)
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
                                      function=lambda row: tokenize_prompt(row, tokenizer),
