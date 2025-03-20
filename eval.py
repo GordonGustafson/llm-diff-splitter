@@ -76,14 +76,15 @@ def run_on_eval_set():
 
             try:
                 parsed_diff_pair = parse_diff_pair(text_produced_by_model)
+            except ParseError as e:
+                print(f"got error {e} when parsing generated diff")
+                num_unparseable_outputs += 1
+            else:
                 num_parseable_outputs += 1
                 max_mean_iou = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
-                                                                 ground_truth=parsed_ground_truth_diff_pair)
+                                                          ground_truth=parsed_ground_truth_diff_pair)
                 total_max_mean_iou += max_mean_iou
                 print(f"max_mean_iou: {max_mean_iou}")
-            except Exception as e:
-                print(e)
-                num_unparseable_outputs += 1
             print("-" * TERMINAL_WIDTH)
 
     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
