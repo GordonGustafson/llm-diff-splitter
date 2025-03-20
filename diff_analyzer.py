@@ -87,10 +87,13 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
         raise ParseError("Missing 'diff ...' on first line")
     next_line_to_consume_index += 1
 
-    new_file_mode = False
+    file_content_changes = True
     if lines[next_line_to_consume_index].startswith("new file mode"):
         next_line_to_consume_index += 1
-        new_file_mode = True
+        file_content_changes = False
+
+    if lines[next_line_to_consume_index].startswith("deleted file mode"):
+        next_line_to_consume_index += 1
 
     if not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError("Missing 'index ...' on second line")
@@ -98,7 +101,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("--- "):
         left_filename = lines[next_line_to_consume_index].removeprefix("--- ")
-    elif new_file_mode:
+    elif not file_content_changes:
         # If the file's contents is unchanged but its mode changed, Git will output something like this:
         #     diff --git a/filename b/filename
         #     new file mode 100644
@@ -115,7 +118,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
             next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
     else:
-        raise ParseError("Missing '--- ...' on third line (no new_file_mode, so expected file contents to change")
+        raise ParseError("Missing '--- ...' on third line (file_content_changes set to True, so expected file contents to change")
     next_line_to_consume_index += 1
 
     if lines[next_line_to_consume_index].startswith("+++ "):
