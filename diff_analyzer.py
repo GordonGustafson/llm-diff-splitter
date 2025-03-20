@@ -153,6 +153,9 @@ def parse_multiple_file_diffs(text: str) -> list[FileDiff]:
 
 def parse_diff_pair(output: str) -> ParsedDiffPair:
     output_split = output.split(DIFF_SEPARATOR)
+    if len(output_split) == 1:
+        return ParsedDiffPair(first_commit_diffs=parse_multiple_file_diffs(output_split[0]),
+                              second_commit_diffs=[])
     return ParsedDiffPair(first_commit_diffs=parse_multiple_file_diffs(output_split[0]),
                           second_commit_diffs=parse_multiple_file_diffs(output_split[1]))
 
