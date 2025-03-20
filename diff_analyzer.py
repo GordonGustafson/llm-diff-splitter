@@ -58,7 +58,7 @@ class IOUStats:
 
 
 def _merge_dict_sequence(dict_iterator: Iterator[dict]) -> dict:
-    return reduce(lambda a, b: a | b, dict_iterator)
+    return reduce(lambda a, b: a | b, dict_iterator, {})
 
 def _get_empty_hunk_from_start_line(start_line) -> Hunk:
     # Example start_line: "@@ -16,7 +16,7 @@ def blah():"
