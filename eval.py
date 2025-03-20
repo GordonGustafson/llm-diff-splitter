@@ -36,10 +36,13 @@ def run_on_eval_set():
     dataset = dataset.map(get_separate_prompt_and_completion)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
-    tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt(row, tokenizer))
+    tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
+                                     function=lambda row: tokenize_prompt(row, tokenizer),
+                                     batched=True,
+                                     batch_size=BATCH_SIZE)
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     eval_dataset = tokenized_datasets["test"]
-    eval_dataloader = DataLoader(eval_dataset, batch_size=BATCH_SIZE)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=1)
 
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
