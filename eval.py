@@ -64,7 +64,7 @@ def run_on_eval_set():
             ground_truth_completion_text  = batch["completion"][0]
             try:
                 parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
-            except ParseError as e:
+            except Exception as e:
                 print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
                 raise e
 
