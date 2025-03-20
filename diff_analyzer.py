@@ -99,6 +99,9 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
         filenames_line = filenames_line.removeprefix("--git ")
         # TODO: handle paths with spaces.
         left_filename, right_filename = filenames_line.split(" ")
+        # If there's an empty line after this, optionally consume it too. Not sure why this happened in the ground truth data.
+        if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].strip() == "":
+            next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
     else:
         raise ParseError("Missing '--- ...' on third line (no new_file_mode, so expected file contents to change")
