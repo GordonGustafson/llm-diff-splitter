@@ -1,5 +1,5 @@
 from data.dataset import load_huggingface_dataset, get_separate_prompt_and_completion
-from diff_analyzer import parse_diff_pair, max_mean_iou_between_diffs
+from diff_analyzer import parse_diff_pair, max_mean_iou_between_diffs, ParseError
 from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH, tokenize_prompt
 
 import torch
@@ -62,7 +62,10 @@ def run_on_eval_set():
             prompt_text = tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)[0].replace('\\n', '\n')
             text_produced_by_model = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0].replace('\\n', '\n')
             ground_truth_completion_text  = batch["completion"][0]
-            parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
+            try:
+                parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
+            except ParseError as e:
+                print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
 
             print(f"input str: {prompt_text}")
             # Adjust this to whatever's aesthetically pleasing.
@@ -73,8 +76,10 @@ def run_on_eval_set():
             try:
                 parsed_diff_pair = parse_diff_pair(text_produced_by_model)
                 num_parseable_outputs += 1
-                total_max_mean_iou += max_mean_iou_between_diffs(predicted=parsed_diff_pair,
+                max_mean_iou = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
                                                                  ground_truth=parsed_ground_truth_diff_pair)
+                total_max_mean_iou += max_mean_iou
+                print(f"max_mean_iou: {max_mean_iou}")
             except Exception as e:
                 print(e)
                 num_unparseable_outputs += 1
