@@ -95,6 +95,7 @@ def run_on_eval_set():
                                                               ground_truth=parsed_ground_truth_diff_pair)
                     total_max_mean_iou += max_mean_iou
                     print(f"max_mean_iou: {max_mean_iou}")
+                    print(f"total_max_mean_iou: {total_max_mean_iou}")
 
     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(eval_dataset)} total outputs")
