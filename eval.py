@@ -74,7 +74,7 @@ def run_on_eval_set():
             print("-" * TERMINAL_WIDTH)
             print(f"model produced: {text_produced_by_model}")
             print("-" * TERMINAL_WIDTH)
-            print(f"ground trush: {ground_truth_completion_text}")
+            print(f"ground truth: {ground_truth_completion_text}")
             print("-" * TERMINAL_WIDTH)
 
             try:
