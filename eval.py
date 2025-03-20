@@ -58,8 +58,8 @@ def run_on_eval_set():
             input_length = batch["input_ids"].shape[1]
             generated_tokens = outputs.sequences[:, input_length:]
 
-            prompt_text = tokenizer.batch_decode(batch["input_ids"])[0].replace('\\n', '\n')
-            text_produced_by_model = tokenizer.batch_decode(generated_tokens)[0].replace('\\n', '\n')
+            prompt_text = tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)[0].replace('\\n', '\n')
+            text_produced_by_model = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0].replace('\\n', '\n')
             ground_truth_completion_text  = batch["completion"][0]
 
             print(f"input str: {prompt_text}")
