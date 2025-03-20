@@ -15,6 +15,7 @@ directory_of_script = Path(__file__).parent.resolve()
 # saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
+BATCH_SIZE = 2
 
 #####################################
 
@@ -38,7 +39,7 @@ def run_on_eval_set():
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     eval_dataset = tokenized_datasets["test"]
-    eval_dataloader = DataLoader(eval_dataset, batch_size=1)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=BATCH_SIZE)
 
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
@@ -59,35 +60,41 @@ def run_on_eval_set():
             input_length = batch["input_ids"].shape[1]
             generated_tokens = outputs.sequences[:, input_length:]
 
-            prompt_text = tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)[0].replace('\\n', '\n')
-            text_produced_by_model = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0].replace('\\n', '\n')
-            ground_truth_completion_text  = batch["completion"][0]
-            try:
-                parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
-            except Exception as e:
-                print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
-                raise e
+            prompt_text_batch = [text.replace('\\n', '\n') for text in
+                           tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)]
+            text_produced_by_model_batch = [text.replace('\\n', '\n') for text in
+                                      tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)]
+            ground_truth_completion_text_batch  = batch["completion"]
 
-            print(f"input str: {prompt_text}")
-            # Adjust this to whatever's aesthetically pleasing.
-            TERMINAL_WIDTH = 239
-            print("-" * TERMINAL_WIDTH)
-            print(f"model produced: {text_produced_by_model}")
-            print("-" * TERMINAL_WIDTH)
-            print(f"ground truth: {ground_truth_completion_text}")
-            print("-" * TERMINAL_WIDTH)
+            for prompt_text, text_produced_by_model, ground_truth_completion_text in zip(prompt_text_batch,
+                                                                                         text_produced_by_model_batch,
+                                                                                         ground_truth_completion_text_batch):
+                try:
+                    parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
+                except Exception as e:
+                    print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
+                    raise e
 
-            try:
-                parsed_diff_pair = parse_diff_pair(text_produced_by_model)
-            except ParseError as e:
-                print(f"got error {e} when parsing generated diff")
-                num_unparseable_outputs += 1
-            else:
-                num_parseable_outputs += 1
-                max_mean_iou = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
-                                                          ground_truth=parsed_ground_truth_diff_pair)
-                total_max_mean_iou += max_mean_iou
-                print(f"max_mean_iou: {max_mean_iou}")
+                print(f"input str: {prompt_text}")
+                # Adjust this to whatever's aesthetically pleasing.
+                TERMINAL_WIDTH = 239
+                print("-" * TERMINAL_WIDTH)
+                print(f"model produced: {text_produced_by_model}")
+                print("-" * TERMINAL_WIDTH)
+                print(f"ground truth: {ground_truth_completion_text}")
+                print("-" * TERMINAL_WIDTH)
+
+                try:
+                    parsed_diff_pair = parse_diff_pair(text_produced_by_model)
+                except ParseError as e:
+                    print(f"got error {e} when parsing generated diff")
+                    num_unparseable_outputs += 1
+                else:
+                    num_parseable_outputs += 1
+                    max_mean_iou = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
+                                                              ground_truth=parsed_ground_truth_diff_pair)
+                    total_max_mean_iou += max_mean_iou
+                    print(f"max_mean_iou: {max_mean_iou}")
 
     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(eval_dataset)} total outputs")
