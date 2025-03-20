@@ -50,7 +50,11 @@ class IOUStats:
     num_in_intersection: int
 
     def iou(self) -> float:
-        return self.num_in_intersection / (self.num_only_in_a + self.num_only_in_b + self.num_in_intersection)
+        union = self.num_only_in_a + self.num_only_in_b + self.num_in_intersection
+        if union == 0:
+            # TODO: Unclear if we should return 0 or 1 here?
+            return 1.0
+        return self.num_in_intersection / union
 
 
 def _merge_dict_sequence(dict_iterator: Iterator[dict]) -> dict:
