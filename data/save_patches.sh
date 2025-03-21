@@ -24,9 +24,9 @@ for pair in "$@"; do
 
     full_repo_path=$script_dir/$CLONE_DIR/$repo
     output_filename="$OUTPUT_PATCHFILE_DIR/$repo-$commit.tar"
-    git -C $full_repo_path diff $commit^^..$commit^ > $FIRST_PATCH_FILENAME &
-    git -C $full_repo_path diff $commit^..$commit > $SECOND_PATCH_FILENAME &
-    git -C $full_repo_path diff $commit^^..$commit > $COMBINED_PATCH_FILENAME &
+    git -C $full_repo_path diff --no-renames $commit^^..$commit^ > $FIRST_PATCH_FILENAME &
+    git -C $full_repo_path diff --no-renames $commit^..$commit > $SECOND_PATCH_FILENAME &
+    git -C $full_repo_path diff --no-renames $commit^^..$commit > $COMBINED_PATCH_FILENAME &
     wait
     tar cf $output_filename $FIRST_PATCH_FILENAME $SECOND_PATCH_FILENAME $COMBINED_PATCH_FILENAME
 done
