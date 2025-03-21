@@ -5,6 +5,7 @@ from data.dataset import END_COMBINED_DIFF_MARKER, END_FIRST_DIFF_MARKER
 from dataclasses import dataclass
 
 import itertools
+import re
 
 if END_COMBINED_DIFF_MARKER != END_FIRST_DIFF_MARKER:
     raise ValueError("END_COMBINED_DIFF_MARKER != END_FIRST_DIFF_MARKER")
@@ -82,6 +83,12 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
     # the diff "header" can be 4 lines without a "new file mode" line, or 5 lines with a
     # "new file mode" line.
     next_line_to_consume_index = 0
+
+    binary_files_match = re.match("^Binary files (.*) and (.*) differ$", lines[next_line_to_consume_index])
+    if binary_files_match:
+        groups = binary_files_match.groups()
+        file_diff = FileDiff(left_filename=groups[0], right_filename=groups[1], hunks=[])
+        return file_diff, 1
 
     if not lines[next_line_to_consume_index].startswith("diff "):
         raise ParseError(f"Missing 'diff ...' on first line, which is {lines[next_line_to_consume_index]}")
