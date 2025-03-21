@@ -95,23 +95,25 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         raise ParseError(f"Missing 'diff ...' on first line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
+    file_mode_changes = False
     if lines[next_line_to_consume_index].startswith("old mode"):
         next_line_to_consume_index += 1
+        file_mode_changes = True
 
     if lines[next_line_to_consume_index].startswith("new mode"):
         next_line_to_consume_index += 1
+        file_mode_changes = True
 
         if lines[next_line_to_consume_index].strip() == "":
             next_line_to_consume_index += 1
 
-    file_content_changes = True
     if lines[next_line_to_consume_index].startswith("new file mode"):
         next_line_to_consume_index += 1
-        file_content_changes = False
+        file_mode_changes = True
 
     if lines[next_line_to_consume_index].startswith("deleted file mode"):
         next_line_to_consume_index += 1
-        file_content_changes = False
+        file_mode_changes = True
 
     if not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError(f"Missing 'index ...' on expected line, which is {lines[next_line_to_consume_index]}")
@@ -119,15 +121,10 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("--- "):
         left_filename = lines[next_line_to_consume_index].removeprefix("--- ")
-    elif not file_content_changes:
-        # If the file's contents is unchanged but its mode changed, Git will output something like this:
-        #     diff --git a/filename b/filename
-        #     new file mode 100644
-        #     index 000000000..e69de29bb
-        # With nothing following it. In this case we pull the filename from the `diff ...` line.
-        # Feel free to switch to pulling the filenames from the `diff ...` line all the tie
-        # This can also happen if the file is deleted, though it's *possible* that the "--- " line will appear
-        # in deletions, but not guaranteed.
+    elif file_mode_changes:
+        # If the file's has mode changes it may not have content changes. In this case we
+        # pull the filename from the `diff ...` line. Feel free to switch to pulling the
+        # filenames from the `diff ...` line all the time.
         filenames_line = lines[0].removeprefix("diff ")
         # TODO: remove other diff flags?
         filenames_line = filenames_line.removeprefix("--git ")
@@ -138,7 +135,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
             next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
     else:
-        raise ParseError(f"Missing '--- ...' (file_content_changes set to True, so expected file contents to change). Line was {lines[next_line_to_consume_index]}")
+        raise ParseError(f"Missing '--- ...' (file_mode_changes set to False, so expected file contents to change). Line was {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     if lines[next_line_to_consume_index].startswith("+++ "):
