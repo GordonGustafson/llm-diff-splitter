@@ -109,7 +109,7 @@ index 0000000..f2e997b
                                             lines=["+dummy change"])])
         assert result == (expected_result, 7)
 
-    def test_parse_file_diff_with_mode_changes_only(self):
+    def test_parse_file_diff_with_new_file(self):
         diff_str = """diff --git a/filename1 b/filename2
 new file mode 100644
 index 000000000..e69de29bb"""
@@ -119,6 +119,29 @@ index 000000000..e69de29bb"""
                                    right_filename="b/filename2",
                                    hunks=[])
         assert result == (expected_result, 3)
+
+    def test_parse_file_diff_with_mode_changes_only(self):
+        diff_str = """diff --git a/filename1 b/filename2
+old mode 100644
+new mode 100755
+index ca4713466..72088e471
+--- a/filename1
++++ b/filename2
+@@ -1,1 +1,1 @@
+-dummy change0
++dummy change1"""
+        split_diff_str = diff_str.split("\n")
+        result = parse_file_diff_from_lines(split_diff_str)
+        expected_result = FileDiff(left_filename="a/filename1",
+                                   right_filename="b/filename2",
+                                   hunks=[
+                                       Hunk(left_start_line_number=1,
+                                            left_num_lines=1,
+                                            right_start_line_number=1,
+                                            right_num_lines=1,
+                                            lines=["-dummy change0",
+                                                   "+dummy change1"])])
+        assert result == (expected_result, 9)
 
     def test_parse_multiple_file_diffs(self):
         result = parse_multiple_file_diffs(_TWO_FILES_DIFF_STR)
