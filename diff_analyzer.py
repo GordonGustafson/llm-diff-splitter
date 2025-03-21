@@ -101,6 +101,9 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     if lines[next_line_to_consume_index].startswith("new mode"):
         next_line_to_consume_index += 1
 
+        if lines[next_line_to_consume_index].strip() == "":
+            next_line_to_consume_index += 1
+
     file_content_changes = True
     if lines[next_line_to_consume_index].startswith("new file mode"):
         next_line_to_consume_index += 1
