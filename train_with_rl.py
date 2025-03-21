@@ -20,7 +20,7 @@ PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 def tokenize_prompt(row_dict, tokenizer):
     text = row_dict["prompt"]
-    print(f"text.shape: {text.shape}")
+    print(f"len(text): {len(text)}")
     result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH, padding='longest')
     return result
 
