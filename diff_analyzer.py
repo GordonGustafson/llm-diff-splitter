@@ -114,7 +114,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         file_content_changes = False
 
     if not lines[next_line_to_consume_index].startswith("index "):
-        raise ParseError(f"Missing 'index ...' on second line, which is {lines[next_line_to_consume_index]}")
+        raise ParseError(f"Missing 'index ...' on expected line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("--- "):
@@ -144,7 +144,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     if lines[next_line_to_consume_index].startswith("+++ "):
         right_filename = lines[next_line_to_consume_index].removeprefix("+++ ")
     else:
-        raise ParseError(f"Missing '+++ ...' on fourth line. Line was {lines[next_line_to_consume_index]}")
+        raise ParseError(f"Missing '+++ ...'. Line was {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     hunks = []
