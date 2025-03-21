@@ -94,6 +94,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
 
     if lines[next_line_to_consume_index].startswith("deleted file mode"):
         next_line_to_consume_index += 1
+        file_content_changes = False
 
     if not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError("Missing 'index ...' on second line")
@@ -108,6 +109,8 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
         #     index 000000000..e69de29bb
         # With nothing following it. In this case we pull the filename from the `diff ...` line.
         # Feel free to switch to pulling the filenames from the `diff ...` line all the tie
+        # This can also happen if the file is deleted, though it's *possible* that the "--- " line will appear
+        # in deletions, but not guaranteed.
         filenames_line = lines[0].removeprefix("diff ")
         # TODO: remove other diff flags?
         filenames_line = filenames_line.removeprefix("--git ")
@@ -118,7 +121,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
             next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
     else:
-        raise ParseError("Missing '--- ...' on third line (file_content_changes set to True, so expected file contents to change")
+        raise ParseError(f"Missing '--- ...' on line {next_line_to_consume_index} (file_content_changes set to True, so expected file contents to change")
     next_line_to_consume_index += 1
 
     if lines[next_line_to_consume_index].startswith("+++ "):
