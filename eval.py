@@ -36,14 +36,15 @@ def run_on_eval_set():
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
     dataset = dataset.map(get_separate_prompt_and_completion)
+    print(f'len(dataset) before batch call: {len(dataset)}')
+    dataset = dataset.batch(batch_size=32, drop_last_batch=False, num_proc=os.cpu_count())
+    print(f'len(dataset) after batch call: {len(dataset)}')
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
-                                     function=lambda row: tokenize_prompt(row, tokenizer),
-                                     batched=True,
-                                     batch_size=BATCH_SIZE)
+                                     function=lambda row: tokenize_prompt(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     eval_dataset = tokenized_datasets["test"]
-    eval_dataloader = DataLoader(eval_dataset, batch_size=32)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=1)
 
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
