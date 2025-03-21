@@ -79,10 +79,11 @@ def _get_empty_hunk_from_start_line(start_line) -> Hunk:
                 right_num_lines=values[3],
                 lines=[])
 
-def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
-    # the diff "header" can be 4 lines without a "new file mode" line, or 5 lines with a
-    # "new file mode" line.
+def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int]:
     next_line_to_consume_index = 0
+
+    if lines[next_line_to_consume_index].strip() == "":
+        return None, 1
 
     binary_files_match = re.match("^Binary files (.*) and (.*) differ$", lines[next_line_to_consume_index])
     if binary_files_match:
@@ -174,7 +175,8 @@ def parse_multiple_file_diffs(text: str) -> list[FileDiff]:
     while index_of_next_line_to_parse < len(lines):
         file_diff, num_lines_parsed = parse_file_diff_from_lines(lines[index_of_next_line_to_parse:])
         index_of_next_line_to_parse += num_lines_parsed
-        result.append(file_diff)
+        if file_diff is not None:
+            result.append(file_diff)
     return result
 
 def parse_diff_pair(output: str) -> ParsedDiffPair:
