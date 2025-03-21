@@ -84,7 +84,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
     next_line_to_consume_index = 0
 
     if not lines[next_line_to_consume_index].startswith("diff "):
-        raise ParseError("Missing 'diff ...' on first line")
+        raise ParseError(f"Missing 'diff ...' on first line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     file_content_changes = True
@@ -97,7 +97,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
         file_content_changes = False
 
     if not lines[next_line_to_consume_index].startswith("index "):
-        raise ParseError("Missing 'index ...' on second line")
+        raise ParseError(f"Missing 'index ...' on second line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("--- "):
@@ -121,13 +121,13 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[FileDiff, int]:
             next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
     else:
-        raise ParseError(f"Missing '--- ...' on line {next_line_to_consume_index} (file_content_changes set to True, so expected file contents to change")
+        raise ParseError(f"Missing '--- ...' (file_content_changes set to True, so expected file contents to change). Line was {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     if lines[next_line_to_consume_index].startswith("+++ "):
         right_filename = lines[next_line_to_consume_index].removeprefix("+++ ")
     else:
-        raise ParseError("Missing '+++ ...' on fourth line")
+        raise ParseError(f"Missing '+++ ...' on fourth line. Line was {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
     hunks = []
