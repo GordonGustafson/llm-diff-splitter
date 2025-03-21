@@ -101,7 +101,7 @@ def run_on_eval_set():
                     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
 
     print(f"mean_max_iou: {total_max_mean_iou / num_parseable_outputs}")
-    print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(eval_dataset)} total outputs")
+    print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(tokenized_dataset)} total outputs")
 
 
 if __name__ == "__main__":
