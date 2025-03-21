@@ -85,12 +85,6 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     if lines[next_line_to_consume_index].strip() == "":
         return None, 1
 
-    binary_files_match = re.match("^Binary files (.*) and (.*) differ$", lines[next_line_to_consume_index])
-    if binary_files_match:
-        groups = binary_files_match.groups()
-        file_diff = FileDiff(left_filename=groups[0], right_filename=groups[1], hunks=[])
-        return file_diff, 1
-
     if not lines[next_line_to_consume_index].startswith("diff "):
         raise ParseError(f"Missing 'diff ...' on first line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
@@ -118,6 +112,14 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     if len(lines) > next_line_to_consume_index and not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError(f"Missing 'index ...' on expected line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
+
+    if len(lines) > next_line_to_consume_index:
+        binary_files_match = re.match("^Binary files (.*) and (.*) differ$", lines[next_line_to_consume_index])
+        if binary_files_match:
+            next_line_to_consume_index += 1
+            groups = binary_files_match.groups()
+            file_diff = FileDiff(left_filename=groups[0], right_filename=groups[1], hunks=[])
+            return file_diff, next_line_to_consume_index
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("--- "):
         left_filename = lines[next_line_to_consume_index].removeprefix("--- ")

@@ -144,13 +144,15 @@ index ca4713466..72088e471
         assert result == (expected_result, 9)
 
     def test_parse_file_diff_with_binary_files(self):
-        diff_str = """Binary files /dev/null and b/tests/data/packages/wheel-0.29.0-py2.py3-none-any.whl differ"""
+        diff_str = """diff --git /dev/null b/tests/data/packages/wheel-0.29.0-py2.py3-none-any.whl
+index 858cd5f..4a93444 100644
+Binary files /dev/null and b/tests/data/packages/wheel-0.29.0-py2.py3-none-any.whl differ"""
         split_diff_str = diff_str.split("\n")
         result = parse_file_diff_from_lines(split_diff_str)
         expected_result = FileDiff(left_filename="/dev/null",
                                    right_filename="b/tests/data/packages/wheel-0.29.0-py2.py3-none-any.whl",
                                    hunks=[])
-        assert result == (expected_result, 1)
+        assert result == (expected_result, 3)
 
     def test_parse_multiple_file_diffs(self):
         result = parse_multiple_file_diffs(_TWO_FILES_DIFF_STR)
