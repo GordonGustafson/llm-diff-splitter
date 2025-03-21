@@ -15,7 +15,7 @@ directory_of_script = Path(__file__).parent.resolve()
 # saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
-BATCH_SIZE = 2
+BATCH_SIZE = 32
 
 #####################################
 
@@ -42,7 +42,7 @@ def run_on_eval_set():
                                      batch_size=BATCH_SIZE)
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     eval_dataset = tokenized_datasets["test"]
-    eval_dataloader = DataLoader(eval_dataset, batch_size=1)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=32)
 
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
