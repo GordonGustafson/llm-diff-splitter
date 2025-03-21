@@ -24,6 +24,7 @@ def run_on_eval_set():
     # load base LLM model and tokenizer
     model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
+    tokenizer.pad_token = tokenizer.eos_token
 
     # Load the Lora model
     model = PeftModel.from_pretrained(model, str(MODEL_NAME))
