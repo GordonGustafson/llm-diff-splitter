@@ -67,8 +67,8 @@ def run_on_eval_set():
             ground_truth_completion_text_batch  = batch["completion"]
 
             for prompt_text, model_output_with_prompt, ground_truth_completion_text in zip(prompt_text_batch,
-                                                                                         model_output_with_prompt_batch,
-                                                                                         ground_truth_completion_text_batch):
+                                                                                           model_output_with_prompt_batch,
+                                                                                           ground_truth_completion_text_batch):
                 try:
                     parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
                 except Exception as e:
@@ -81,7 +81,8 @@ def run_on_eval_set():
                 # Adjust this to whatever's aesthetically pleasing.
                 TERMINAL_WIDTH = 239
                 print("-" * TERMINAL_WIDTH)
-                print(f"model produced: {text_produced_by_model}")
+                print(f"model produced (with prompt): {model_output_with_prompt}")
+                print(f"model produced (without prompt): {text_produced_by_model}")
                 print("-" * TERMINAL_WIDTH)
                 print(f"ground truth: {ground_truth_completion_text}")
                 print("-" * TERMINAL_WIDTH)
