@@ -1,5 +1,5 @@
 from data.dataset import load_huggingface_dataset, get_separate_prompt_and_completion
-from diff_analyzer import parse_diff_pair, max_mean_iou_between_diffs, ParseError
+from diff_analyzer import parse_diff_pair, max_mean_iou_between_diffs, ParseError, DIFF_SEPARATOR
 from train_with_rl import BASE_MODEL_NAME, MODEL_NAME, MAX_TOKEN_LENGTH, tokenize_prompt
 
 import torch
@@ -60,23 +60,22 @@ def run_on_eval_set():
                                      do_sample=True,
                                      top_p=0.9)
 
-            input_length = batch["input_ids"].shape[1]
-            generated_tokens = outputs.sequences[:, input_length:]
-
             prompt_text_batch = [text.replace('\\n', '\n') for text in
                            tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)]
-            text_produced_by_model_batch = [text.replace('\\n', '\n') for text in
-                                      tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)]
+            model_output_with_prompt_batch = [text.replace('\\n', '\n') for text in
+                                            tokenizer.batch_decode(outputs.sequences, skip_special_tokens=True)]
             ground_truth_completion_text_batch  = batch["completion"]
 
-            for prompt_text, text_produced_by_model, ground_truth_completion_text in zip(prompt_text_batch,
-                                                                                         text_produced_by_model_batch,
+            for prompt_text, model_output_with_prompt, ground_truth_completion_text in zip(prompt_text_batch,
+                                                                                         model_output_with_prompt_batch,
                                                                                          ground_truth_completion_text_batch):
                 try:
                     parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
                 except Exception as e:
                     print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
                     raise e
+                # Remove the prompt, which ends with DIFF_SEPARATOR.
+                text_produced_by_model = model_output_with_prompt.split(DIFF_SEPARATOR, 1)[1]
 
                 print(f"input str: {prompt_text}")
                 # Adjust this to whatever's aesthetically pleasing.
