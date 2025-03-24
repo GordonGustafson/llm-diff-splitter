@@ -20,7 +20,7 @@ PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 def tokenize_prompt(row_dict, tokenizer):
     text = row_dict["prompt"]
-    result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH, padding='longest', return_tensors="pt")
+    result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH, padding="longest", padding_side="left", return_tensors="pt")
     return result
 
 def compute_loss(transition_scores, prompt_tokens, generated_tokens, ground_truth_completion, tokenizer) -> torch.Tensor:
