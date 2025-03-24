@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 from data.dataset import load_huggingface_dataset, get_separate_prompt_and_completion
-from diff_analyzer import get_diff_metrics, diff_metrics_to_reward, parse_diff_pair
+from diff_analyzer import parse_diff_pair, ParseError, max_mean_iou_between_diffs
 
 BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
@@ -23,27 +23,34 @@ def tokenize_prompt(row_dict, tokenizer):
     result = tokenizer(text, truncation=True, max_length=MAX_TOKEN_LENGTH, padding="longest", padding_side="left", return_tensors="pt")
     return result
 
-def compute_loss(transition_scores, prompt_tokens, generated_tokens, ground_truth_completion, tokenizer) -> torch.Tensor:
+def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prompt, ground_truth_completion, tokenizer) -> torch.Tensor:
     prompt_text = tokenizer.batch_decode(prompt_tokens)[0].replace('\\n', '\n')
-    generated_text = tokenizer.batch_decode(generated_tokens)[0].replace('\\n', '\n')
+    generated_text_without_prompt = tokenizer.batch_decode(generated_tokens_without_prompt)[0].replace('\\n', '\n')
     ground_truth_completion_text = ground_truth_completion[0]
     selected_log_probabilities = transition_scores
 
-    diff_metrics = get_diff_metrics(combined_diff=prompt_text, generated_diff=generated_text)
-    reward = diff_metrics_to_reward(diff_metrics)
+    try:
+        parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
+    except Exception as e:
+        print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
+        raise e
+
+    try:
+        parsed_diff_pair = parse_diff_pair(generated_text_without_prompt)
+    except ParseError as e:
+        print(f"got error {e} when parsing generated diff")
+        reward = -1.0
+    else:
+        reward = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
+                                            ground_truth=parsed_ground_truth_diff_pair)
+
     print(f"prompt text:\n{prompt_text}")
     print("-" * 239)
-    print(f"generated_text:\n{generated_text}")
+    print(f"generated_text_without_prompt:\n{generated_text_without_prompt}")
     print("-" * 239)
     print(f"ground_truth_completion_text:\n{ground_truth_completion_text}")
     print("-" * 239)
-    try:
-        model_output = parse_diff_pair(generated_text)
-        print(model_output)
-    except Exception as e:
-        print(e)
-    print(f"diff metrics: {diff_metrics}")
-    print(f"rewards: {reward}")
+    print(f"reward: {reward}")
 
     train_loss_items = - selected_log_probabilities * reward
     total_train_loss = train_loss_items.sum()
@@ -86,7 +93,7 @@ def fine_tune_model(model_name: str) -> None:
                                  top_p=0.9)
 
         input_length = batch["input_ids"].shape[1]
-        generated_tokens = outputs.sequences[:, input_length:]
+        generated_tokens_without_prompt = outputs.sequences[:, input_length:]
 
         ground_truth_completion = batch["completion"]
 
@@ -96,7 +103,7 @@ def fine_tune_model(model_name: str) -> None:
 
         loss = compute_loss(transition_scores=transition_scores,
                             prompt_tokens=batch["input_ids"],
-                            generated_tokens=generated_tokens,
+                            generated_tokens_without_prompt=generated_tokens_without_prompt,
                             ground_truth_completion=ground_truth_completion,
                             tokenizer=tokenizer)
 
