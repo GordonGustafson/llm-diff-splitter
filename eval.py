@@ -55,16 +55,15 @@ def run_on_eval_set():
             outputs = model.generate(batch["input_ids"],
                                      attention_mask=batch["attention_mask"],
                                      return_dict_in_generate=True,
-                                     output_scores=True,
                                      max_length=MAX_TOKEN_LENGTH,
                                      do_sample=True,
                                      top_p=0.9)
 
             prompt_text_batch = [text.replace('\\n', '\n') for text in
-                           tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)]
+                                 tokenizer.batch_decode(batch["input_ids"], skip_special_tokens=True)]
             model_output_with_prompt_batch = [text.replace('\\n', '\n') for text in
-                                            tokenizer.batch_decode(outputs.sequences, skip_special_tokens=True)]
-            ground_truth_completion_text_batch  = batch["completion"]
+                                              tokenizer.batch_decode(outputs.sequences, skip_special_tokens=True)]
+            ground_truth_completion_text_batch = batch["completion"]
 
             for prompt_text, model_output_with_prompt, ground_truth_completion_text in zip(prompt_text_batch,
                                                                                            model_output_with_prompt_batch,
@@ -98,9 +97,9 @@ def run_on_eval_set():
                                                               ground_truth=parsed_ground_truth_diff_pair)
                     total_max_mean_iou += max_mean_iou
                     print(f"max_mean_iou for this diff: {max_mean_iou}")
-                    print(f"max_mean_iou for all diffs so far: {total_max_mean_iou / num_parseable_outputs}")
+                    print(f"mean max_mean_iou for all parseable diffs so far: {total_max_mean_iou / num_parseable_outputs}")
 
-    print(f"max_mean_iou: {total_max_mean_iou / num_parseable_outputs}")
+    print(f"mean max_mean_iou: {total_max_mean_iou / num_parseable_outputs}")
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(tokenized_dataset)} total outputs")
 
 
