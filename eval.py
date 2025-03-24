@@ -15,7 +15,7 @@ directory_of_script = Path(__file__).parent.resolve()
 # saved_model_dir = directory_of_script / "fine_tuned_llama-3.2-1B"
 
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
-BATCH_SIZE = 32
+BATCH_SIZE = 12
 
 #####################################
 
