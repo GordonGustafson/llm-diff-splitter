@@ -4,6 +4,9 @@ set -euo pipefail
 
 nvidia-smi
 
+echo 'set-option -g history-limit 10000' >> ~/.tmux.conf
+echo 'set-window-option -g mode-keys vi' >> ~/.tmux.conf
+
 git clone https://github.com/GordonGustafson/llm-diff-splitter.git
 cd llm-diff-splitter
 pip install -r <(grep -v 'torch==' requirements.txt | grep -v 'torchvision==')
