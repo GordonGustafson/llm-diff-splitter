@@ -68,7 +68,8 @@ def fine_tune_model(model_name: str) -> None:
     dataset = dataset.map(get_separate_prompt_and_completion)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
-    tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt(row, tokenizer))
+    tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
+                                     function=lambda row: tokenize_prompt(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
     eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
@@ -82,8 +83,8 @@ def fine_tune_model(model_name: str) -> None:
     model.to(device)
 
     for batch in eval_dataloader:
-        batch["input_ids"] = batch["input_ids"].to(device)
-        batch["attention_mask"] = batch["attention_mask"].to(device)
+        batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
+        batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
         outputs = model.generate(batch["input_ids"],
                                  attention_mask=batch["attention_mask"],
                                  return_dict_in_generate=True,
