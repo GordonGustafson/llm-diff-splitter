@@ -41,8 +41,10 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prom
         print(f"got error {e} when parsing generated diff")
         reward = -1.0
     else:
-        reward = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
-                                            ground_truth=parsed_ground_truth_diff_pair)
+        raw_reward = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
+                                                ground_truth=parsed_ground_truth_diff_pair)
+        baseline_reward = 0.5
+        reward = raw_reward - baseline_reward
 
     print(f"prompt text:\n{prompt_text}")
     print("-" * 239)
