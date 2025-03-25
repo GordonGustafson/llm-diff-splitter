@@ -65,7 +65,7 @@ def fine_tune_model(model_name: str) -> None:
     tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(model_name)
-    model = PeftModel.from_pretrained(model, model_name)
+    model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
 
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
     dataset = dataset.map(get_separate_prompt_and_completion)
