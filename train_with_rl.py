@@ -2,9 +2,6 @@ import math
 import os
 from pathlib import Path
 
-from undecorated import undecorated
-from types import MethodType
-
 import torch
 from torch.utils.data import DataLoader
 
@@ -85,11 +82,6 @@ def fine_tune_model(model_name: str) -> None:
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
-    # The `generate` function uses the @torch.no_grad() decorator. In order to use `generate`
-    # with gradients, we remove that decorator. Taken from here: https://discuss.huggingface.co/t/16999
-    generate_with_grad = undecorated(model.generate)
-    model.generate_with_grad = MethodType(generate_with_grad, model)
-
     for batch in eval_dataloader:
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
@@ -98,10 +90,9 @@ def fine_tune_model(model_name: str) -> None:
                                              max_length=MAX_TOKEN_LENGTH,
                                              do_sample=True,
                                              top_p=0.9)
-        outputs = model.generate_with_grad(batch["input_ids"],
-                                           attention_mask=batch["attention_mask"],
-                                           generation_config=generation_config)
-
+        outputs = model.generate(batch["input_ids"],
+                                 attention_mask=batch["attention_mask"],
+                                 generation_config=generation_config)
 
 
         input_length = batch["input_ids"].shape[1]
