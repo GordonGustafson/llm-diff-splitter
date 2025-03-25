@@ -8,7 +8,7 @@ from types import MethodType
 import torch
 from torch.utils.data import DataLoader
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
 
 from peft import PeftModel
 
@@ -93,13 +93,16 @@ def fine_tune_model(model_name: str) -> None:
     for batch in eval_dataloader:
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
-        outputs = model.generate_with_grad(input_ids=batch["input_ids"],
+        generation_config = GenerationConfig(return_dict_in_generate=True,
+                                             output_scores=True,
+                                             max_length=MAX_TOKEN_LENGTH,
+                                             do_sample=True,
+                                             top_p=0.9)
+        outputs = model.generate_with_grad(batch["input_ids"],
                                            attention_mask=batch["attention_mask"],
-                                           return_dict_in_generate=True,
-                                           output_scores=True,
-                                           max_length=MAX_TOKEN_LENGTH,
-                                           do_sample=True,
-                                           top_p=0.9)
+                                           generation_config=generation_config)
+
+
 
         input_length = batch["input_ids"].shape[1]
         generated_tokens_without_prompt = outputs.sequences[:, input_length:]
