@@ -77,6 +77,7 @@ def fine_tune_model(model_name: str) -> None:
                                   lr=math.exp(-4),
                                   betas=(0.9, 0.999),
                                   weight_decay=0)
+    scaler = torch.amp.GradScaler("cuda", enabled=True)
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
@@ -84,20 +85,18 @@ def fine_tune_model(model_name: str) -> None:
     for batch in eval_dataloader:
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
+        input_length = batch["input_ids"].shape[1]
+        ground_truth_completion = batch["completion"]
         generation_config = GenerationConfig(return_dict_in_generate=True,
                                              output_scores=True,
                                              max_length=MAX_TOKEN_LENGTH,
                                              do_sample=True,
                                              top_p=0.9)
-        outputs = model.generate(batch["input_ids"],
-                                 attention_mask=batch["attention_mask"],
-                                 generation_config=generation_config)
-
-
-        input_length = batch["input_ids"].shape[1]
+        with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=True):
+            outputs = model.generate(batch["input_ids"],
+                                     attention_mask=batch["attention_mask"],
+                                     generation_config=generation_config)
         generated_tokens_without_prompt = outputs.sequences[:, input_length:]
-
-        ground_truth_completion = batch["completion"]
 
         transition_scores = model.compute_transition_scores(
             outputs.sequences, outputs.scores, normalize_logits=True
@@ -109,8 +108,9 @@ def fine_tune_model(model_name: str) -> None:
                             ground_truth_completion=ground_truth_completion,
                             tokenizer=tokenizer)
 
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
         optimizer.zero_grad()
 
     model.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
