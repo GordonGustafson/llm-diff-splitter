@@ -97,6 +97,8 @@ def fine_tune_model(model_name: str) -> None:
         #                          generation_config=generation_config)
         logits_processor = LogitsProcessorList()
         logits_processor.append(TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=1))
+        # This is needed to call model._get_stopping_criteria
+        model._prepare_special_tokens(generation_config, kwargs_has_attention_mask=True, device=device)
         stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
                                                          stopping_criteria=None,
                                                          tokenizer=None)
