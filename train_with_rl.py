@@ -5,7 +5,8 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TopPLogitsWarper, LogitsProcessorList, \
+    StoppingCriteriaList, MaxLengthCriteria, EosTokenCriteria
 
 from peft import PeftModel
 
@@ -91,10 +92,22 @@ def fine_tune_model(model_name: str) -> None:
                                              max_length=MAX_TOKEN_LENGTH,
                                              do_sample=True,
                                              top_p=0.9)
-        outputs = model.generate(batch["input_ids"],
-                                 attention_mask=batch["attention_mask"],
-                                 generation_config=generation_config)
+        # outputs = model.generate(batch["input_ids"],
+        #                          attention_mask=batch["attention_mask"],
+        #                          generation_config=generation_config)
+        logits_processor = LogitsProcessorList()
+        logits_processor.append(TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=1))
+        stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
+                                                         stopping_criteria=None,
+                                                         tokenizer=None)
 
+        outputs = model._sample(input_ids=batch["input_ids"],
+                                attention_mask=batch["attention_mask"],
+                                logits_processor=logits_processor,
+                                stopping_criteria=stopping_criteria,
+                                generation_config=generation_config,
+                                synced_gpus=False,
+                                streamer=None)
 
         input_length = batch["input_ids"].shape[1]
         generated_tokens_without_prompt = outputs.sequences[:, input_length:]
