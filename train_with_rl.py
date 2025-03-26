@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TopPLogitsWarper, LogitsProcessorList, \
-    StoppingCriteriaList, MaxLengthCriteria, EosTokenCriteria
+    StoppingCriteriaList
 
 from peft import PeftModel
 
@@ -100,7 +100,7 @@ def fine_tune_model(model_name: str) -> None:
         # This is needed to call model._get_stopping_criteria
         model._prepare_special_tokens(generation_config, kwargs_has_attention_mask=True, device=device)
         stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
-                                                         stopping_criteria=None,
+                                                         stopping_criteria=StoppingCriteriaList(),
                                                          tokenizer=None)
 
         outputs = model._sample(input_ids=batch["input_ids"],
