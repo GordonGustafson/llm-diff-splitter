@@ -150,10 +150,12 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         raise ParseError(f"Missing '--- ...' (file_mode_changes set to False, so expected file contents to change). Line was {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
 
-    if lines[next_line_to_consume_index].startswith("+++ "):
+    if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("+++ "):
         right_filename = lines[next_line_to_consume_index].removeprefix("+++ ")
-    else:
+    elif len(lines) > next_line_to_consume_index:
         raise ParseError(f"Missing '+++ ...'. Line was {lines[next_line_to_consume_index]}")
+    else:
+        raise ParseError(f"Missing '+++ ...' (reached end of input)")
     next_line_to_consume_index += 1
 
     hunks = []
