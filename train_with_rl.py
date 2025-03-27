@@ -1,12 +1,10 @@
-import math
 import os
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TopPLogitsWarper, LogitsProcessorList, \
-    StoppingCriteriaList
+    StoppingCriteriaList, Trainer, TrainingArguments
 
 from peft import PeftModel
 
@@ -17,6 +15,8 @@ BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
 MAX_TOKEN_LENGTH = 1536
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
+
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
 def tokenize_prompt(row_dict, tokenizer):
@@ -59,6 +59,53 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prom
     total_train_loss = train_loss_items.sum()
     return total_train_loss
 
+class DiffTrainer(Trainer):
+    def __init__(self, model, tokenizer, **kwargs):
+        super().__init__(model=model, **kwargs)
+        self.tokenizer = tokenizer
+
+        self.generation_config = GenerationConfig(return_dict_in_generate=True,
+                                                  output_scores=True,
+                                                  max_length=MAX_TOKEN_LENGTH,
+                                                  do_sample=True,
+                                                  top_p=0.9)
+        self.logits_processor = LogitsProcessorList()
+        self.logits_processor.append(TopPLogitsWarper(top_p=self.generation_config.top_p, min_tokens_to_keep=1))
+        # This is needed to call model._get_stopping_criteria
+        model._prepare_special_tokens(self.generation_config, kwargs_has_attention_mask=True, device=device)
+        self.stopping_criteria = model._get_stopping_criteria(generation_config=self.generation_config,
+                                                              stopping_criteria=StoppingCriteriaList(),
+                                                              tokenizer=None)
+
+    def compute_loss(self, model, inputs, return_outputs: bool = False, num_items_in_batch = None):
+        inputs["input_ids"] = inputs["input_ids"].to(device).squeeze(0)
+        inputs["attention_mask"] = inputs["attention_mask"].to(device).squeeze(0)
+
+        outputs = model._sample(input_ids=inputs["input_ids"],
+                                attention_mask=inputs["attention_mask"],
+                                logits_processor=self.logits_processor,
+                                stopping_criteria=self.stopping_criteria,
+                                generation_config=self.generation_config,
+                                synced_gpus=False,
+                                streamer=None)
+
+        input_length = inputs["input_ids"].shape[1]
+        generated_tokens_without_prompt = outputs.sequences[:, input_length:]
+        ground_truth_completion = inputs["completion"]
+
+        transition_scores = model.compute_transition_scores(
+            outputs.sequences, outputs.scores, normalize_logits=True
+        )
+
+        loss = compute_loss(transition_scores=transition_scores,
+                            prompt_tokens=inputs["input_ids"],
+                            generated_tokens_without_prompt=generated_tokens_without_prompt,
+                            ground_truth_completion=ground_truth_completion,
+                            tokenizer=self.tokenizer)
+
+        return (loss, outputs) if return_outputs else loss
+
+
 def fine_tune_model(model_name: str) -> None:
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_NAME)
     tokenizer.pad_token = tokenizer.eos_token
@@ -73,65 +120,31 @@ def fine_tune_model(model_name: str) -> None:
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
                                      function=lambda row: tokenize_prompt(row, tokenizer))
     tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
-    train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
-    eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
 
-    optimizer = torch.optim.AdamW(model.parameters(),
-                                  lr=math.exp(-4),
-                                  betas=(0.9, 0.999),
-                                  weight_decay=0)
-
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
-    for batch in eval_dataloader:
-        batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
-        batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
-        generation_config = GenerationConfig(return_dict_in_generate=True,
-                                             output_scores=True,
-                                             max_length=MAX_TOKEN_LENGTH,
-                                             do_sample=True,
-                                             top_p=0.9)
-        # outputs = model.generate(batch["input_ids"],
-        #                          attention_mask=batch["attention_mask"],
-        #                          generation_config=generation_config)
-        logits_processor = LogitsProcessorList()
-        logits_processor.append(TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=1))
-        # This is needed to call model._get_stopping_criteria
-        model._prepare_special_tokens(generation_config, kwargs_has_attention_mask=True, device=device)
-        stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
-                                                         stopping_criteria=StoppingCriteriaList(),
-                                                         tokenizer=None)
+    training_args = TrainingArguments(
+        output_dir="./results",
+        learning_rate=5e-5,
+        save_strategy="no",
+        per_device_train_batch_size=1,
+        num_train_epochs=1,
+        weight_decay=0.0,
+        logging_dir="./logs",
+        logging_steps=10,
+        fp16=False,
+    )
 
-        outputs = model._sample(input_ids=batch["input_ids"],
-                                attention_mask=batch["attention_mask"],
-                                logits_processor=logits_processor,
-                                stopping_criteria=stopping_criteria,
-                                generation_config=generation_config,
-                                synced_gpus=False,
-                                streamer=None)
+    # Initialize Trainer
+    trainer = DiffTrainer(
+        model=model,
+        tokenizer=tokenizer,
+        args=training_args,
+        train_dataset=tokenized_datasets["test"],
+    )
 
-        input_length = batch["input_ids"].shape[1]
-        generated_tokens_without_prompt = outputs.sequences[:, input_length:]
-
-        ground_truth_completion = batch["completion"]
-
-        transition_scores = model.compute_transition_scores(
-            outputs.sequences, outputs.scores, normalize_logits=True
-        )
-
-        loss = compute_loss(transition_scores=transition_scores,
-                            prompt_tokens=batch["input_ids"],
-                            generated_tokens_without_prompt=generated_tokens_without_prompt,
-                            ground_truth_completion=ground_truth_completion,
-                            tokenizer=tokenizer)
-
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-    model.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
-    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
+    trainer.train()
+    trainer.save_model("./fine_tuned_llama-3.2-1B_rl")
 
 if __name__ == "__main__":
     fine_tune_model(MODEL_NAME)
