@@ -80,6 +80,8 @@ def _get_empty_hunk_from_start_line(start_line) -> Hunk:
     between_at_signs = start_line.removeprefix("@@ -").split("@@")[0].strip()
     comma_separated_pairs = between_at_signs.split(" +")
     values = [value for pair in comma_separated_pairs for value in _get_start_line_num_lines_tuple(pair)]
+    if len(values) != 4:
+        raise ParseError("Got {len(values)} integers from hunk start line, when exactly 4 were expected.")
     return Hunk(left_start_line_number=values[0],
                 left_num_lines=values[1],
                 right_start_line_number=values[2],
