@@ -126,6 +126,7 @@ def fine_tune_model(model_name: str) -> None:
     training_args = TrainingArguments(
         output_dir="./results",
         learning_rate=5e-5,
+        remove_unused_columns=False,  # Keep the "completion" column around
         save_strategy="no",
         per_device_train_batch_size=1,
         num_train_epochs=1,
