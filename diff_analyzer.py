@@ -146,8 +146,10 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].strip() == "":
             next_line_to_consume_index += 1
         return FileDiff(left_filename=left_filename, right_filename=right_filename, hunks=[]), next_line_to_consume_index
-    else:
+    elif len(lines) > next_line_to_consume_index:
         raise ParseError(f"Missing '--- ...' (file_mode_changes set to False, so expected file contents to change). Line was {lines[next_line_to_consume_index]}")
+    else:
+        raise ParseError(f"Missing '--- ...' (file_mode_changes set to False, so expected file contents to change). Reached end of input.")
     next_line_to_consume_index += 1
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("+++ "):
