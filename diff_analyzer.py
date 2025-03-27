@@ -167,8 +167,10 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
             if current_hunk is not None:
                 hunks.append(current_hunk)
             current_hunk = _get_empty_hunk_from_start_line(line)
-        else:
+        elif current_hunk is not None:
             current_hunk.lines.append(line)
+        else:
+            raise ParseError("Unexpected non-hunk header and non-diff header line")
     if current_hunk is not None:
         hunks.append(current_hunk)
 
