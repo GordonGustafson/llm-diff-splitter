@@ -64,9 +64,16 @@ def _merge_dict_sequence(dict_iterator: Iterator[dict]) -> dict:
 def _get_start_line_num_lines_tuple(s: str) -> tuple[int, int]:
     if "," in s:
         split = s.split(",")
-        return int(split[0]), int(split[1])
-    # If there's only 1 line, the number of lines can be omitted.
-    return int(s), 1
+        try:
+            return int(split[0]), int(split[1])
+        except ValueError:
+            raise ParseError("Invalid integer literal in diff line range: '{s}'")
+    try:
+        # If there's only 1 line, the number of lines can be omitted.
+        return int(s), 1
+    except ValueError:
+        raise ParseError("Invalid integer literal in diff line range: '{s}'")
+
 
 def _get_empty_hunk_from_start_line(start_line) -> Hunk:
     # Example start_line: "@@ -16,7 +16,7 @@ def blah():"
@@ -88,6 +95,9 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     if not lines[next_line_to_consume_index].startswith("diff "):
         raise ParseError(f"Missing 'diff ...' on first line, which is {lines[next_line_to_consume_index]}")
     next_line_to_consume_index += 1
+
+    if next_line_to_consume_index == len(lines):
+        raise ParseError("No line after `diff ...` line")
 
     file_mode_changes = False
     if lines[next_line_to_consume_index].startswith("old mode"):
