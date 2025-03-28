@@ -101,7 +101,7 @@ def fine_tune_model(model_name: str) -> None:
                                                      stopping_criteria=StoppingCriteriaList(),
                                                      tokenizer=None)
 
-    for batch in eval_dataloader:
+    for batch_index, batch in enumerate(eval_dataloader):
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
 
@@ -132,8 +132,11 @@ def fine_tune_model(model_name: str) -> None:
         optimizer.step()
         optimizer.zero_grad()
 
-    model.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
-    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl")
+        if batch_index % 150 == 149:
+            model.save_pretrained(f"./fine_tuned_llama-3.2-1B_rl_batch_{batch_index}")
+
+    model.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
+    tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
 
 if __name__ == "__main__":
     fine_tune_model(MODEL_NAME)
