@@ -91,7 +91,7 @@ def _get_empty_hunk_from_start_line(start_line) -> Hunk:
 def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int]:
     next_line_to_consume_index = 0
 
-    if lines[next_line_to_consume_index].strip() == "":
+    if len(lines) == 0 or lines[next_line_to_consume_index].strip() == "":
         return None, 1
 
     if not lines[next_line_to_consume_index].startswith("diff "):
@@ -99,12 +99,15 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
     next_line_to_consume_index += 1
 
     if next_line_to_consume_index == len(lines):
-        raise ParseError("No line after `diff ...` line")
+        raise ParseError("End of input immediately after `diff ...` line")
 
     file_mode_changes = False
     if lines[next_line_to_consume_index].startswith("old mode"):
         next_line_to_consume_index += 1
         file_mode_changes = True
+
+        if next_line_to_consume_index == len(lines):
+            raise ParseError("End of input immediately after `old mode ...` line")
 
     if lines[next_line_to_consume_index].startswith("new mode"):
         next_line_to_consume_index += 1
@@ -139,11 +142,20 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         # If the file's has mode changes it may not have content changes. In this case we
         # pull the filename from the `diff ...` line. Feel free to switch to pulling the
         # filenames from the `diff ...` line all the time.
-        filenames_line = lines[0].removeprefix("diff ")
         # TODO: remove other diff flags?
-        filenames_line = filenames_line.removeprefix("--git ")
-        # TODO: handle paths with spaces.
-        left_filename, right_filename = filenames_line.split(" ")
+        diff_with_git_flag_prefix = "diff --git "
+        if not lines[0].startswith(diff_with_git_flag_prefix):
+            raise ParseError(f"First line didn't start with '{diff_with_git_flag_prefix}'")
+        filenames_line = lines[0].removeprefix(diff_with_git_flag_prefix)
+        # If there are spaces in the filename the git diff doesn't quote or escape them. Example:
+        # diff --git a/file with space.txt b/file with space.txt
+        # It's not possible to robustly parse this even if we use assume the filenames start with
+        # a/ and b/. Hopefully this approach works well enough.
+        filenames_split = filenames_line.split(" b/", maxsplit=1)
+        if len(filenames_split) != 2:
+            raise ParseError(f"Could not parse filenames from diff header: '{lines[0]}'")
+        left_filename = filenames_split[0]
+        right_filename = "b/" + filenames_split[1]
         # If there's an empty line after this, optionally consume it too. Not sure why this happened in the ground truth data.
         if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].strip() == "":
             next_line_to_consume_index += 1
@@ -164,7 +176,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
 
     hunks = []
     current_hunk = None
-    index_of_last_line_consumed = 4
+    index_of_last_line_consumed = next_line_to_consume_index - 1
     for index_of_last_line_consumed, line in itertools.islice(enumerate(lines), next_line_to_consume_index, None):
         if line.startswith(("diff ", "index ")):
             index_of_last_line_consumed -= 1
@@ -176,7 +188,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         elif current_hunk is not None:
             current_hunk.lines.append(line)
         else:
-            raise ParseError("Unexpected non-hunk header and non-diff header line")
+            raise ParseError("Unexpected hunk contents line before a hunk header")
     if current_hunk is not None:
         hunks.append(current_hunk)
 
@@ -285,6 +297,7 @@ def max_mean_iou_between_diffs(predicted: ParsedDiffPair, ground_truth: ParsedDi
                _mean_iou_between_diffs(predicted_flipped, ground_truth))
 
 
+@dataclass
 class DiffMetrics:
     num_diff_separators: int
 
