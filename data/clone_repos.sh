@@ -13,7 +13,7 @@ while read git_repo_remote; do
     pushd $CLONE_DIR
     git clone $git_repo_remote &
     popd
-done < $REPOS_FILE
+done < <(grep -v '^#' $REPOS_FILE)
 
 wait
 

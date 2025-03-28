@@ -43,7 +43,7 @@ while read -r git_repo_remote; do
     repo_dir=$(basename --suffix=.git $git_repo_remote)
     full_repo_path=$script_dir/$CLONE_DIR/$repo_dir
     save_commits_for_repo $full_repo_path &
-done < $REPOS_FILE
+done < <(grep -v '^#' $REPOS_FILE)
 
 wait
 
