@@ -102,6 +102,7 @@ def fine_tune_model(model_name: str) -> None:
                                                      tokenizer=None)
 
     for batch_index, batch in enumerate(eval_dataloader):
+        print(f"batch {batch_index} out of {len(eval_dataloader)}")
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
 
