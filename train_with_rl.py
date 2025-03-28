@@ -88,24 +88,22 @@ def fine_tune_model(model_name: str) -> None:
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model.to(device)
 
+    generation_config = GenerationConfig(return_dict_in_generate=True,
+                                         output_scores=True,
+                                         max_length=MAX_TOKEN_LENGTH,
+                                         do_sample=True,
+                                         top_p=0.9)
+    logits_processor = LogitsProcessorList()
+    logits_processor.append(TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=1))
+    # This is needed to call model._get_stopping_criteria
+    model._prepare_special_tokens(generation_config, kwargs_has_attention_mask=True, device=device)
+    stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
+                                                     stopping_criteria=StoppingCriteriaList(),
+                                                     tokenizer=None)
+
     for batch in eval_dataloader:
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
-        generation_config = GenerationConfig(return_dict_in_generate=True,
-                                             output_scores=True,
-                                             max_length=MAX_TOKEN_LENGTH,
-                                             do_sample=True,
-                                             top_p=0.9)
-        # outputs = model.generate(batch["input_ids"],
-        #                          attention_mask=batch["attention_mask"],
-        #                          generation_config=generation_config)
-        logits_processor = LogitsProcessorList()
-        logits_processor.append(TopPLogitsWarper(top_p=generation_config.top_p, min_tokens_to_keep=1))
-        # This is needed to call model._get_stopping_criteria
-        model._prepare_special_tokens(generation_config, kwargs_has_attention_mask=True, device=device)
-        stopping_criteria = model._get_stopping_criteria(generation_config=generation_config,
-                                                         stopping_criteria=StoppingCriteriaList(),
-                                                         tokenizer=None)
 
         outputs = model._sample(input_ids=batch["input_ids"],
                                 attention_mask=batch["attention_mask"],
