@@ -30,6 +30,13 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prom
     ground_truth_completion_text = ground_truth_completion[0]
     selected_log_probabilities = transition_scores
 
+    print(f"prompt text:\n{prompt_text}")
+    print("-" * 239)
+    print(f"generated_text_without_prompt:\n{generated_text_without_prompt}")
+    print("-" * 239)
+    print(f"ground_truth_completion_text:\n{ground_truth_completion_text}")
+    print("-" * 239)
+
     try:
         parsed_ground_truth_diff_pair = parse_diff_pair(ground_truth_completion_text)
     except Exception as e:
@@ -39,7 +46,10 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prom
     try:
         parsed_diff_pair = parse_diff_pair(generated_text_without_prompt)
     except ParseError as e:
-        print(f"got error {e} when parsing generated diff")
+        print(f"got ParseError {e} when parsing generated diff")
+        reward = -1.0
+    except Exception as e:
+        print(f"got unexpected exception {e} when parsing generated diff")
         reward = -1.0
     else:
         raw_reward = max_mean_iou_between_diffs(predicted=parsed_diff_pair,
@@ -47,12 +57,6 @@ def compute_loss(transition_scores, prompt_tokens, generated_tokens_without_prom
         baseline_reward = 0.5
         reward = raw_reward - baseline_reward
 
-    print(f"prompt text:\n{prompt_text}")
-    print("-" * 239)
-    print(f"generated_text_without_prompt:\n{generated_text_without_prompt}")
-    print("-" * 239)
-    print(f"ground_truth_completion_text:\n{ground_truth_completion_text}")
-    print("-" * 239)
     print(f"reward: {reward}")
 
     train_loss_items = - selected_log_probabilities * reward
