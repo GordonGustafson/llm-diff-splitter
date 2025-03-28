@@ -15,7 +15,7 @@ from diff_analyzer import parse_diff_pair, ParseError, max_mean_iou_between_diff
 
 BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
-MAX_TOKEN_LENGTH = 1536
+MAX_TOKEN_LENGTH = 512
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
 
