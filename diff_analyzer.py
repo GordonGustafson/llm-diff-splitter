@@ -67,12 +67,12 @@ def _get_start_line_num_lines_tuple(s: str) -> tuple[int, int]:
         try:
             return int(split[0]), int(split[1])
         except ValueError:
-            raise ParseError("Invalid integer literal in diff line range: '{s}'")
+            raise ParseError(f"Invalid integer literal in diff line range: '{s}'")
     try:
         # If there's only 1 line, the number of lines can be omitted.
         return int(s), 1
     except ValueError:
-        raise ParseError("Invalid integer literal in diff line range: '{s}'")
+        raise ParseError(f"Invalid integer literal in diff line range: '{s}'")
 
 
 def _get_empty_hunk_from_start_line(start_line) -> Hunk:
@@ -81,7 +81,7 @@ def _get_empty_hunk_from_start_line(start_line) -> Hunk:
     comma_separated_pairs = between_at_signs.split(" +")
     values = [value for pair in comma_separated_pairs for value in _get_start_line_num_lines_tuple(pair)]
     if len(values) != 4:
-        raise ParseError("Got {len(values)} integers from hunk start line, when exactly 4 were expected.")
+        raise ParseError(f"Got {len(values)} integers from hunk start line, when exactly 4 were expected.")
     return Hunk(left_start_line_number=values[0],
                 left_num_lines=values[1],
                 right_start_line_number=values[2],
