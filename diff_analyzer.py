@@ -126,7 +126,9 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
 
     if len(lines) > next_line_to_consume_index and not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError(f"Missing 'index ...' on expected line, which is {lines[next_line_to_consume_index]}")
-    next_line_to_consume_index += 1
+
+    if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("index "):
+        next_line_to_consume_index += 1
 
     if len(lines) > next_line_to_consume_index:
         binary_files_match = re.match("^Binary files (.*) and (.*) differ$", lines[next_line_to_consume_index])
