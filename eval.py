@@ -41,14 +41,17 @@ def run_on_eval_set():
                                     batch_size=BATCH_SIZE)
 
     tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
-    eval_dataloader = DataLoader(tokenized_dataset, batch_size=1)
+    eval_dataloader = DataLoader(tokenized_dataset, batch_size=BATCH_SIZE)
 
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
     total_max_mean_iou = 0.0
 
+    num_batches = len(tokenized_dataset) // BATCH_SIZE
+
     with torch.inference_mode():
-        for batch in eval_dataloader:
+        for batch_index, batch in enumerate(eval_dataloader):
+            print(f"Batch {batch_index} out of {num_batches}")
             batch["input_ids"] = batch["input_ids"].to(device)
             batch["attention_mask"] = batch["attention_mask"].to(device)
             outputs = model.generate(batch["input_ids"],
@@ -79,7 +82,6 @@ def run_on_eval_set():
                 # Adjust this to whatever's aesthetically pleasing.
                 TERMINAL_WIDTH = 239
                 print("-" * TERMINAL_WIDTH)
-                print(f"model produced (with prompt): {model_output_with_prompt}")
                 print(f"model produced (without prompt): {text_produced_by_model}")
                 print("-" * TERMINAL_WIDTH)
                 print(f"ground truth: {ground_truth_completion_text}")
