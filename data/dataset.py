@@ -72,8 +72,42 @@ def get_combined_prompt_and_completion(dic: dict[str, str]) -> dict[str, str]:
     text = f"{dic['combined_diff']}{END_COMBINED_DIFF_MARKER}{dic['first_diff']}{END_FIRST_DIFF_MARKER}{dic['second_diff']}"
     return {"prompt_and_completion": text}
 
+def _split_hf_dataset(dataset: datasets.Dataset, seed=42) -> datasets.DatasetDict:
+    """
+    Splits a Hugging Face dataset into 4 parts: 55%, 15%, 15%, and 15%.
+
+    Args:
+        dataset (Dataset): A Hugging Face Dataset object.
+        seed (int): Random seed for reproducibility.
+
+    Returns:
+        DatasetDict: A dictionary containing the splits.
+    """
+    # First, split off 55%
+    split_1 = dataset.train_test_split(test_size=0.45, seed=seed)
+    train_set = split_1["train"]
+    remaining_set = split_1["test"]
+
+    # Now split the remaining 45% into three equal parts (15% each)
+    split_2 = remaining_set.train_test_split(test_size=2 / 3, seed=seed)
+    train_rl_set = split_2["train"]
+    remaining_set = split_2["test"]
+
+    split_3 = remaining_set.train_test_split(test_size=0.5, seed=seed)
+    val_set = split_3["train"]
+    test_set = split_3["test"]
+
+    return datasets.DatasetDict({
+        'train': train_set,
+        'train_rl': train_rl_set,
+        'validation': val_set,
+        'test': test_set,
+    })
+
 def load_huggingface_dataset(parquet_path: Path) -> datasets.DatasetDict:
-    return datasets.load_dataset("parquet", data_files=str(parquet_path))
+    unsplit_dataset = datasets.load_dataset("parquet", data_files=str(parquet_path))
+    return _split_hf_dataset(unsplit_dataset["train"])
+
 
 class DiffPairDataset(Dataset):
     def __init__(self, directory_of_tar_files: Path) -> None:

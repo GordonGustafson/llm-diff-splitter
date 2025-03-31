@@ -39,8 +39,9 @@ def fine_tune_model(model_name: str) -> None:
     )
     model = get_peft_model(model, lora_config)
     dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
+    del dataset["train_rl"]
+    del dataset["test"]
     dataset = dataset.map(get_combined_prompt_and_completion)
-    dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     tokenized_datasets = dataset.map(num_proc=os.cpu_count(), function=lambda row: tokenize_prompt_and_completion(row, tokenizer))
 
@@ -49,8 +50,9 @@ def fine_tune_model(model_name: str) -> None:
     training_args = TrainingArguments(
         output_dir="./results",
         eval_strategy="steps",
-        eval_steps=2000,
-        save_strategy="no",
+        eval_steps=4000,
+        save_strategy="steps",
+        save_steps=2000,
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
         num_train_epochs=1,
@@ -66,7 +68,7 @@ def fine_tune_model(model_name: str) -> None:
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],
+        eval_dataset=tokenized_datasets["validation"],
     )
 
     trainer.train()

@@ -70,15 +70,13 @@ def fine_tune_model(model_name: str) -> None:
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
     model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
 
-    dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)
-    dataset = dataset.map(get_separate_prompt_and_completion)
-    dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
+    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"]
+    train_dataset = train_dataset.map(get_separate_prompt_and_completion)
 
-    tokenized_datasets = dataset.map(num_proc=os.cpu_count(),
-                                     function=lambda row: tokenize_prompt(row, tokenizer))
-    tokenized_datasets.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
-    train_dataloader = DataLoader(tokenized_datasets["train"], batch_size=1)
-    eval_dataloader = DataLoader(tokenized_datasets["test"], batch_size=1)
+    tokenized_train_dataset = train_dataset.map(num_proc=os.cpu_count(),
+                                                function=lambda row: tokenize_prompt(row, tokenizer))
+    tokenized_train_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
+    train_dataloader = DataLoader(tokenized_train_dataset, batch_size=1)
 
     optimizer = torch.optim.AdamW(model.parameters(),
                                   lr=5e-5,
@@ -101,8 +99,8 @@ def fine_tune_model(model_name: str) -> None:
                                                      stopping_criteria=StoppingCriteriaList(),
                                                      tokenizer=None)
 
-    for batch_index, batch in enumerate(eval_dataloader):
-        print(f"batch {batch_index} out of {len(eval_dataloader)}")
+    for batch_index, batch in enumerate(train_dataloader):
+        print(f"batch {batch_index} out of {len(train_dataloader)}")
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
 
