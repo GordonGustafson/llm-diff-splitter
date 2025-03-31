@@ -153,7 +153,13 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         # diff --git a/file with space.txt b/file with space.txt
         # It's not possible to robustly parse this even if we use assume the filenames start with
         # a/ and b/. Hopefully this approach works well enough.
-        filenames_split = filenames_line.split(" b/", maxsplit=1)
+        if " b/" in filenames_line:
+            filenames_split = filenames_line.split(" b/", maxsplit=1)
+        else:
+            # The filenames line *can* have quotes in it, like in this case:
+            # diff --git "a/selfdrive/assets/sounds/Icon\r" "b/selfdrive/assets/sounds/Icon\r"
+            filenames_line = filenames_line.strip("\"")
+            filenames_split = filenames_line.split("\" \"b/", maxsplit=1)
         if len(filenames_split) != 2:
             raise ParseError(f"Could not parse filenames from diff header: '{lines[0]}'")
         left_filename = filenames_split[0]
