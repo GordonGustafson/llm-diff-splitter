@@ -124,7 +124,7 @@ def parse_file_diff_from_lines(lines: list[str]) -> tuple[(FileDiff | None), int
         next_line_to_consume_index += 1
         file_mode_changes = True
 
-    if len(lines) > next_line_to_consume_index and not lines[next_line_to_consume_index].startswith("index "):
+    if len(lines) > next_line_to_consume_index and not file_mode_changes and not lines[next_line_to_consume_index].startswith("index "):
         raise ParseError(f"Missing 'index ...' on expected line, which is {lines[next_line_to_consume_index]}")
 
     if len(lines) > next_line_to_consume_index and lines[next_line_to_consume_index].startswith("index "):
