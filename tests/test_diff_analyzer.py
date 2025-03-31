@@ -120,7 +120,29 @@ index 000000000..e69de29bb"""
                                    hunks=[])
         assert result == (expected_result, 3)
 
+    def test_parse_file_with_quoted_filenames(self):
+        diff_str = """diff --git "a/selfdrive/assets/sounds/Icon\r" "b/selfdrive/assets/sounds/Icon\r"
+deleted file mode 100644
+index e69de29bb..000000000"""
+        split_diff_str = diff_str.split("\n")
+        result = parse_file_diff_from_lines(split_diff_str)
+        expected_result = FileDiff(left_filename="a/selfdrive/assets/sounds/Icon\r",
+                                   right_filename="b/selfdrive/assets/sounds/Icon\r",
+                                   hunks=[])
+        assert result == (expected_result, 3)
+
     def test_parse_file_diff_with_mode_changes_only(self):
+        diff_str = """diff --git a/filename1 b/filename2
+old mode 100644
+new mode 100755"""
+        split_diff_str = diff_str.split("\n")
+        result = parse_file_diff_from_lines(split_diff_str)
+        expected_result = FileDiff(left_filename="a/filename1",
+                                   right_filename="b/filename2",
+                                   hunks=[])
+        assert result == (expected_result, 3)
+
+    def test_parse_file_diff_with_mode_changes(self):
         diff_str = """diff --git a/filename1 b/filename2
 old mode 100644
 new mode 100755
