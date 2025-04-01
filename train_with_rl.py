@@ -1,5 +1,5 @@
-import math
 import os
+import time
 from pathlib import Path
 
 import torch
@@ -101,6 +101,8 @@ def fine_tune_model(model_name: str) -> None:
                                                      tokenizer=None)
 
     for batch_index, batch in enumerate(train_dataloader):
+        start_time = time.perf_counter()
+
         print(f"batch {batch_index} out of {len(train_dataloader)}")
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
@@ -131,6 +133,9 @@ def fine_tune_model(model_name: str) -> None:
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
+
+        end_time = time.perf_counter()
+        print(f"Batch took {end_time - start_time} seconds")
 
         if batch_index % 150 == 149:
             model.save_pretrained(f"./fine_tuned_llama-3.2-1B_rl_batch_{batch_index}")
