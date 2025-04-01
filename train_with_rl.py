@@ -146,10 +146,12 @@ def fine_tune_model(model_name: str) -> None:
             end_time = time.perf_counter()
             print(f"Batch took {end_time - start_time} seconds")
 
+            prof.step()
+
             if batch_index % 150 == 149:
                 model.save_pretrained(f"./fine_tuned_llama-3.2-1B_rl_batch_{batch_index}")
 
-        prof.export_chrome_trace("trace.json")
+    prof.export_chrome_trace("trace.json")
 
     model.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
     tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
