@@ -103,6 +103,10 @@ def fine_tune_model(model_name: str) -> None:
                                                      tokenizer=None)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                 schedule=torch.profiler.schedule(
+                     wait=1,
+                     warmup=1,
+                     active=1),
                  record_shapes=True,
                  profile_memory=True) as prof:
         for batch_index, batch in enumerate(train_dataloader):
