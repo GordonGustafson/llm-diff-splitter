@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import torch
+from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TopPLogitsWarper, LogitsProcessorList, \
@@ -103,29 +104,29 @@ def fine_tune_model(model_name: str) -> None:
         print(f"batch {batch_index} out of {len(train_dataloader)}")
         batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
         batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
-
-        outputs = model._sample(input_ids=batch["input_ids"],
-                                attention_mask=batch["attention_mask"],
-                                logits_processor=logits_processor,
-                                stopping_criteria=stopping_criteria,
-                                generation_config=generation_config,
-                                synced_gpus=False,
-                                streamer=None)
-
         input_length = batch["input_ids"].shape[1]
-        generated_tokens_without_prompt = outputs.sequences[:, input_length:]
-
         ground_truth_completion = batch["completion"]
 
-        transition_scores = model.compute_transition_scores(
-            outputs.sequences, outputs.scores, normalize_logits=True
-        )
+        with autocast(dtype=torch.bfloat16):
+            outputs = model._sample(input_ids=batch["input_ids"],
+                                    attention_mask=batch["attention_mask"],
+                                    logits_processor=logits_processor,
+                                    stopping_criteria=stopping_criteria,
+                                    generation_config=generation_config,
+                                    synced_gpus=False,
+                                    streamer=None)
 
-        loss = compute_loss(transition_scores=transition_scores,
-                            prompt_tokens=batch["input_ids"],
-                            generated_tokens_without_prompt=generated_tokens_without_prompt,
-                            ground_truth_completion=ground_truth_completion,
-                            tokenizer=tokenizer)
+            generated_tokens_without_prompt = outputs.sequences[:, input_length:]
+
+            transition_scores = model.compute_transition_scores(
+                outputs.sequences, outputs.scores, normalize_logits=True
+            )
+
+            loss = compute_loss(transition_scores=transition_scores,
+                                prompt_tokens=batch["input_ids"],
+                                generated_tokens_without_prompt=generated_tokens_without_prompt,
+                                ground_truth_completion=ground_truth_completion,
+                                tokenizer=tokenizer)
 
         loss.backward()
         optimizer.step()
