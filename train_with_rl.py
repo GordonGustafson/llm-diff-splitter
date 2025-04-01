@@ -73,7 +73,7 @@ def fine_tune_model(model_name: str) -> None:
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
     model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
 
-    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"].select(range(1))
+    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"].select(range(3))
     train_dataset = train_dataset.map(get_separate_prompt_and_completion)
 
     tokenized_train_dataset = train_dataset.map(num_proc=os.cpu_count(),
