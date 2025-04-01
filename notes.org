@@ -1,5 +1,17 @@
 https://unix.stackexchange.com/questions/480443/how-shall-i-understand-the-unified-format-of-diff-output
 
+* Eval results: ggustafson/diff-splitter-llama-3.2-1B-19k-examples-less-than-1k-chars
+stopped on eval batch 41 out of 162 (batch size 32)
+mean max_mean_iou: 0.6519101864044762
+
+* Eval results: ggustafson/diff-splitter-llama-3.2-1B-7k-examples
+** no additional tuning
+stopped on eval batch 36 out of 162 (batch size 32)
+mean max_mean_iou: 0.6397909684268016
+** finetuning 299 steps with lr=5e-5, reward baseline = 0.5
+mean max_mean_iou: 0.36247493120108304
+284 parseable outputs and 499 unparseable outputs out of 783 total outputs
+
 * Eval results differing base on batch sizes
 Seems like this comes from using float16/bfloat16?
 https://github.com/huggingface/transformers/issues/23017#issuecomment-1649630232
@@ -30,11 +42,10 @@ Doesn't support unified diff format, see https://github.com/google/diff-match-pa
 generate fake commit hash that's consistent between the before and after diffs
 
 * bad things the model does right now
-duplicate divider token
-duplicate diffs
-forget the diff header
-diff with no + or - lines
-
+** duplicate divider token
+** duplicate diffs
+** forget the diff header
+** diff with no + or - lines
 ** adding and removing identical lines:
 -    def test_searchsorted_wrong_dtype(self):
 +    def test_searchsorted_wrong_dtype(self):
