@@ -10,6 +10,7 @@ from peft import (
     )
 
 from data.dataset import load_huggingface_dataset, get_combined_prompt_and_completion
+from torch.profiler import profile, ProfilerActivity
 
 MODEL_NAME = "meta-llama/Llama-3.2-1B"
 MAX_TOKEN_LENGTH = 1536
@@ -67,11 +68,17 @@ def fine_tune_model(model_name: str) -> None:
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["validation"],
+        train_dataset=tokenized_datasets["train"].select(range(1)),
+        eval_dataset=tokenized_datasets["validation"].select(range(1)),
     )
 
-    trainer.train()
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                 record_shapes=True,
+                 profile_memory=True) as prof:
+        trainer.train()
+
+    prof.export_chrome_trace("trace-train.json")
+
     trainer.save_model("./fine_tuned_llama-3.2-1B")
     tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B")
 
