@@ -5,6 +5,8 @@ from pathlib import Path
 import torch
 from torch.cuda.amp import autocast
 from torch.utils.data import DataLoader
+from torch.profiler import profile, ProfilerActivity
+
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, TopPLogitsWarper, LogitsProcessorList, \
     StoppingCriteriaList
@@ -71,7 +73,7 @@ def fine_tune_model(model_name: str) -> None:
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
     model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
 
-    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"]
+    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"].select(range(1))
     train_dataset = train_dataset.map(get_separate_prompt_and_completion)
 
     tokenized_train_dataset = train_dataset.map(num_proc=os.cpu_count(),
@@ -100,45 +102,50 @@ def fine_tune_model(model_name: str) -> None:
                                                      stopping_criteria=StoppingCriteriaList(),
                                                      tokenizer=None)
 
-    for batch_index, batch in enumerate(train_dataloader):
-        start_time = time.perf_counter()
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+                 record_shapes=True,
+                 profile_memory=True) as prof:
+        for batch_index, batch in enumerate(train_dataloader):
+            start_time = time.perf_counter()
 
-        print(f"batch {batch_index} out of {len(train_dataloader)}")
-        batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
-        batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
-        input_length = batch["input_ids"].shape[1]
-        ground_truth_completion = batch["completion"]
+            print(f"batch {batch_index} out of {len(train_dataloader)}")
+            batch["input_ids"] = batch["input_ids"].to(device).squeeze(0)
+            batch["attention_mask"] = batch["attention_mask"].to(device).squeeze(0)
+            input_length = batch["input_ids"].shape[1]
+            ground_truth_completion = batch["completion"]
 
-        with autocast(dtype=torch.bfloat16):
-            outputs = model._sample(input_ids=batch["input_ids"],
-                                    attention_mask=batch["attention_mask"],
-                                    logits_processor=logits_processor,
-                                    stopping_criteria=stopping_criteria,
-                                    generation_config=generation_config,
-                                    synced_gpus=False,
-                                    streamer=None)
+            with autocast(dtype=torch.bfloat16):
+                outputs = model._sample(input_ids=batch["input_ids"],
+                                        attention_mask=batch["attention_mask"],
+                                        logits_processor=logits_processor,
+                                        stopping_criteria=stopping_criteria,
+                                        generation_config=generation_config,
+                                        synced_gpus=False,
+                                        streamer=None)
 
-            generated_tokens_without_prompt = outputs.sequences[:, input_length:]
+                generated_tokens_without_prompt = outputs.sequences[:, input_length:]
 
-            transition_scores = model.compute_transition_scores(
-                outputs.sequences, outputs.scores, normalize_logits=True
-            )
+                transition_scores = model.compute_transition_scores(
+                    outputs.sequences, outputs.scores, normalize_logits=True
+                )
 
-            loss = compute_loss(transition_scores=transition_scores,
-                                prompt_tokens=batch["input_ids"],
-                                generated_tokens_without_prompt=generated_tokens_without_prompt,
-                                ground_truth_completion=ground_truth_completion,
-                                tokenizer=tokenizer)
+                loss = compute_loss(transition_scores=transition_scores,
+                                    prompt_tokens=batch["input_ids"],
+                                    generated_tokens_without_prompt=generated_tokens_without_prompt,
+                                    ground_truth_completion=ground_truth_completion,
+                                    tokenizer=tokenizer)
 
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
 
-        end_time = time.perf_counter()
-        print(f"Batch took {end_time - start_time} seconds")
+            end_time = time.perf_counter()
+            print(f"Batch took {end_time - start_time} seconds")
 
-        if batch_index % 150 == 149:
-            model.save_pretrained(f"./fine_tuned_llama-3.2-1B_rl_batch_{batch_index}")
+            if batch_index % 150 == 149:
+                model.save_pretrained(f"./fine_tuned_llama-3.2-1B_rl_batch_{batch_index}")
+
+        prof.export_chrome_trace("trace.json")
 
     model.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
     tokenizer.save_pretrained("./fine_tuned_llama-3.2-1B_rl_final")
