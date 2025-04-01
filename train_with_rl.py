@@ -14,7 +14,7 @@ from data.dataset import load_huggingface_dataset, get_separate_prompt_and_compl
 from diff_analyzer import parse_diff_pair, ParseError, max_mean_iou_between_diffs
 
 BASE_MODEL_NAME = "meta-llama/Llama-3.2-1B"
-MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-7k-examples"
+MODEL_NAME = "ggustafson/diff-splitter-llama-3.2-1B-19k-examples-less-than-1k-chars"
 MAX_TOKEN_LENGTH = 512
 PARQUET_DATASET_PATH = Path("data/combined-diffs-less-than-1000-chars.parquet")
 
