@@ -79,7 +79,7 @@ def fine_tune_model(model_name: str) -> None:
     train_dataloader = DataLoader(tokenized_train_dataset, batch_size=1)
 
     optimizer = torch.optim.AdamW(model.parameters(),
-                                  lr=5e-5,
+                                  lr=5e-7,
                                   betas=(0.9, 0.999),
                                   weight_decay=0)
 
