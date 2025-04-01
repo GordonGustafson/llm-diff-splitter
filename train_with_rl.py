@@ -73,7 +73,7 @@ def fine_tune_model(model_name: str) -> None:
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
     model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
 
-    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"].select(range(3))
+    train_dataset = load_huggingface_dataset(PARQUET_DATASET_PATH)["train_rl"].select(range(1))
     train_dataset = train_dataset.map(get_separate_prompt_and_completion)
 
     tokenized_train_dataset = train_dataset.map(num_proc=os.cpu_count(),
@@ -103,10 +103,10 @@ def fine_tune_model(model_name: str) -> None:
                                                      tokenizer=None)
 
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-                 schedule=torch.profiler.schedule(
-                     wait=1,
-                     warmup=1,
-                     active=1),
+                 # schedule=torch.profiler.schedule(
+                 #     wait=1,
+                 #     warmup=1,
+                 #     active=1),
                  record_shapes=True,
                  profile_memory=True) as prof:
         for batch_index, batch in enumerate(train_dataloader):
@@ -139,9 +139,9 @@ def fine_tune_model(model_name: str) -> None:
                                     ground_truth_completion=ground_truth_completion,
                                     tokenizer=tokenizer)
 
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
+            # optimizer.zero_grad()
 
             end_time = time.perf_counter()
             print(f"Batch took {end_time - start_time} seconds")
