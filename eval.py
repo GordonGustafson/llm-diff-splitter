@@ -58,7 +58,8 @@ def run_on_eval_set():
             outputs = model.generate(batch["input_ids"],
                                      attention_mask=batch["attention_mask"],
                                      return_dict_in_generate=True,
-                                     max_length=MAX_TOKEN_LENGTH,
+                                     # 512 is too short for some examples in the validation set.
+                                     max_length=1024,
                                      do_sample=True,
                                      top_p=0.9)
 
