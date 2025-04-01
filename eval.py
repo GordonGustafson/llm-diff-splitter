@@ -43,6 +43,7 @@ def run_on_eval_set():
     tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "completion"])
     eval_dataloader = DataLoader(tokenized_dataset, batch_size=BATCH_SIZE)
 
+    num_diff_separator_not_found = 0
     num_parseable_outputs = 0
     num_unparseable_outputs = 0
     total_max_mean_iou = 0.0
@@ -76,7 +77,14 @@ def run_on_eval_set():
                     print(f"got error {e} when parsing ground truth diff: {ground_truth_completion_text}")
                     raise e
                 # Remove the prompt, which ends with DIFF_SEPARATOR.
-                text_produced_by_model = model_output_with_prompt.split(DIFF_SEPARATOR, 1)[1]
+                try:
+                    text_produced_by_model = model_output_with_prompt.split(DIFF_SEPARATOR, 1)[1]
+                except IndexError as e:
+                    print("Could not find DIFF_SEPARATOR in the model output including the prompt! "
+                          "Out best guess is that this is due to the token limit truncating the output. "
+                          "Skipping this sample.")
+                    num_diff_separator_not_found += 1
+                    continue
 
                 print(f"input str: {prompt_text}")
                 # Adjust this to whatever's aesthetically pleasing.
@@ -99,9 +107,12 @@ def run_on_eval_set():
                     total_max_mean_iou += max_mean_iou
                     print(f"max_mean_iou for this diff: {max_mean_iou}")
                     print(f"mean max_mean_iou for all parseable diffs so far: {total_max_mean_iou / num_parseable_outputs}")
+                    print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(tokenized_dataset)} total outputs")
+                    print(f"Number of times diff separator wasn't found: {num_diff_separator_not_found}")
 
     print(f"mean max_mean_iou: {total_max_mean_iou / num_parseable_outputs}")
     print(f"{num_parseable_outputs} parseable outputs and {num_unparseable_outputs} unparseable outputs out of {len(tokenized_dataset)} total outputs")
+    print(f"Number of times diff separator wasn't found: {num_diff_separator_not_found}")
 
 
 if __name__ == "__main__":
